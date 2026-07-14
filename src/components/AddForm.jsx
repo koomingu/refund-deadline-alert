@@ -1,0 +1,179 @@
+import { useRef } from 'react';
+import { VENDORS } from '../constants/vendors';
+
+const Loader = () => (
+  <span className="animate-spin inline-block text-2xl">⟳</span>
+);
+
+export default function AddForm({
+  editingId,
+  vendorType, setVendorType,
+  date, setDate,
+  time, setTime,
+  origin, setOrigin,
+  destination, setDestination,
+  price, setPrice,
+  showManualForm, setShowManualForm,
+  savedRoutes, onSaveRoute, onDeleteRoute, onApplyRoute,
+  isAnalyzing, previewData, setPreviewData,
+  onImageUpload, onApplyPreview,
+  onSubmit, onCancelEdit,
+}) {
+  const fileInputRef = useRef(null);
+
+  return (
+    <section className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      {editingId && (
+        <div className="flex items-center justify-between bg-amber-50 border-b border-amber-200 px-4 py-2.5">
+          <span className="text-sm font-bold text-amber-800">예매 수정 중</span>
+          <button onClick={onCancelEdit} className="text-amber-700 text-xs font-bold">취소</button>
+        </div>
+      )}
+
+      {/* 캡처로 등록 — 메인 액션 */}
+      {!editingId && (
+        <div className="p-5">
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isAnalyzing}
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl py-5 flex flex-col items-center gap-2 transition-colors shadow-sm">
+            {isAnalyzing
+              ? <><Loader /><span className="font-bold text-base">분석 중...</span></>
+              : <>
+                  <span className="text-3xl">📷</span>
+                  <span className="font-bold text-base">승차권 캡처로 등록하기</span>
+                  <span className="text-blue-200 text-xs">이미지를 업로드하면 예매 정보를 자동으로 채워드려요</span>
+                </>
+            }
+          </button>
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={onImageUpload}
+            accept="image/*"
+            className="hidden"
+          />
+        </div>
+      )}
+
+      {/* 캡처 결과 확인 */}
+      {previewData && (
+        <div className="mx-5 mb-4 p-4 bg-indigo-50 border border-indigo-200 rounded-xl">
+          <div className="flex justify-between items-center mb-3">
+            <span className="font-bold text-indigo-800">추출된 정보 확인</span>
+            <button onClick={() => setPreviewData(null)} className="text-gray-400">✕</button>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-sm text-indigo-900 bg-white p-3 rounded-lg mb-3">
+            <div><span className="text-indigo-400">종류 </span>{previewData.vendorType || '미인식'}</div>
+            <div><span className="text-indigo-400">날짜 </span>{previewData.date || '미인식'}</div>
+            <div><span className="text-indigo-400">시간 </span>{previewData.time || '미인식'}</div>
+            <div><span className="text-indigo-400">여정 </span>{previewData.origin} → {previewData.destination}</div>
+          </div>
+          <button
+            onClick={onApplyPreview}
+            className="w-full bg-indigo-600 text-white font-bold py-2.5 rounded-lg hover:bg-indigo-700">
+            이 정보로 등록하기
+          </button>
+        </div>
+      )}
+
+      {/* 직접 입력 토글 */}
+      {!editingId && (
+        <button
+          onClick={() => setShowManualForm(v => !v)}
+          className="w-full flex items-center justify-center gap-1.5 py-3 border-t border-gray-100 text-sm text-gray-400 hover:bg-gray-50 transition-colors">
+          직접 입력할게요 {showManualForm ? '▴' : '▾'}
+        </button>
+      )}
+
+      {/* 직접 입력 폼 */}
+      {showManualForm && (
+        <form onSubmit={onSubmit} className="p-5 pt-4 border-t border-gray-100 space-y-4">
+          {/* 교통수단 */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">교통수단</label>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { id:'ktx', icon:'🚆', label:'KTX' },
+                { id:'srt', icon:'🚄', label:'SRT' },
+                { id:'bus', icon:'🚌', label:'시외/고속' },
+              ].map(t => (
+                <button
+                  key={t.id} type="button"
+                  onClick={() => setVendorType(t.id)}
+                  className={`py-2.5 text-sm rounded-lg border flex flex-col items-center gap-1 transition-all ${
+                    vendorType === t.id
+                      ? 'bg-blue-50 border-blue-500 text-blue-700 font-bold ring-1 ring-blue-500'
+                      : 'bg-white text-gray-500 hover:bg-gray-50'
+                  }`}>
+                  <span>{t.icon}</span><span>{t.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 날짜/시각 */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">출발일</label>
+              <input type="date" value={date} onChange={e => setDate(e.target.value)}
+                className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">출발 시각</label>
+              <input type="time" value={time} onChange={e => setTime(e.target.value)}
+                className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
+            </div>
+          </div>
+
+          {/* 출발지/도착지 */}
+          <div>
+            <div className="flex gap-2 items-center">
+              <input type="text" value={origin} onChange={e => setOrigin(e.target.value)} placeholder="출발지(선택)"
+                className="flex-1 p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
+              <span className="text-gray-400 shrink-0">→</span>
+              <input type="text" value={destination} onChange={e => setDestination(e.target.value)} placeholder="도착지(선택)"
+                className="flex-1 p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
+              <button type="button" onClick={onSaveRoute} title="자주 가는 노선으로 저장"
+                className="shrink-0 p-2.5 border border-gray-300 rounded-lg text-gray-400 hover:text-yellow-500 hover:border-yellow-400 transition-colors">
+                ⭐
+              </button>
+            </div>
+            {savedRoutes.length > 0 && (
+              <div className="mt-2 flex gap-1.5 flex-wrap">
+                {savedRoutes.map(route => (
+                  <div key={route.id} className="flex items-center gap-1 bg-blue-50 border border-blue-200 rounded-full px-3 py-1">
+                    <button type="button" onClick={() => onApplyRoute(route)} className="text-xs font-semibold text-blue-700">
+                      {route.vendorName && <span className="text-blue-400 mr-1">{route.vendorName}</span>}
+                      {route.label}
+                    </button>
+                    <button type="button" onClick={() => onDeleteRoute(route.id)} className="text-gray-300 hover:text-red-400 ml-1 text-xs">✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* 결제 금액 */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">
+              결제 금액 <span className="text-gray-400 font-normal">(선택 — 수수료 금액 계산용)</span>
+            </label>
+            <div className="relative">
+              <input type="number" value={price} onChange={e => setPrice(e.target.value)} placeholder="0"
+                className="w-full p-2.5 pr-7 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
+              <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs">원</span>
+            </div>
+          </div>
+
+          <button type="submit"
+            className={`w-full text-white font-bold py-3.5 rounded-lg transition-colors shadow-sm ${
+              editingId ? 'bg-amber-500 hover:bg-amber-600' : 'bg-blue-600 hover:bg-blue-700'
+            }`}>
+            {editingId ? '수정 완료' : '예매 등록'}
+          </button>
+        </form>
+      )}
+    </section>
+  );
+}
