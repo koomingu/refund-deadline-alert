@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ALARM_PRESETS, VENDORS } from '../constants/vendors';
 import StationMap from './StationMap';
 
-export default function SettingsTab({ customAlarmPresets, setCustomAlarmPresets, savedRoutes, setSavedRoutes, showToast }) {
+export default function SettingsTab({ alarmPresets, setAlarmPresets, customAlarmPresets, setCustomAlarmPresets, savedRoutes, setSavedRoutes, showToast }) {
   const [newPresetInput, setNewPresetInput] = useState('');
   const [apiKeyInput, setApiKeyInput] = useState(() => localStorage.getItem('geminiApiKey') || '');
   const [showApiKey, setShowApiKey] = useState(false);
@@ -21,8 +21,9 @@ export default function SettingsTab({ customAlarmPresets, setCustomAlarmPresets,
       showToast('이미 있는 프리셋입니다.'); return;
     }
     setCustomAlarmPresets(p => [...p, m].sort((a, b) => a - b));
+    setAlarmPresets(prev => ({ ...prev, [m]: true }));
     setNewPresetInput('');
-    showToast(`${m}분 전 프리셋이 추가되었습니다.`);
+    showToast(`${m}분 전 알림이 추가되었습니다.`);
   };
 
   const handleSelectRoute = (origin, destination) => {
@@ -111,25 +112,46 @@ export default function SettingsTab({ customAlarmPresets, setCustomAlarmPresets,
         )}
       </div>
 
-      {/* 알림 프리셋 */}
+      {/* 알림 설정 */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-        <h3 className="text-base font-bold text-gray-800 mb-1">알림 프리셋 관리</h3>
-        <p className="text-xs text-gray-400 mb-4">수수료 구간 변경 전 알림을 받을 시간을 직접 추가할 수 있습니다.</p>
-        <div className="flex gap-2 flex-wrap mb-4">
+        <h3 className="text-base font-bold text-gray-800 mb-1">알림 설정</h3>
+        <p className="text-xs text-gray-400 mb-4">예매 카드의 🔔를 탭하면 켜진 간격으로 알림이 일괄 설정됩니다.</p>
+
+        <div className="space-y-3">
+          {/* 기본 프리셋 토글 */}
           {ALARM_PRESETS.map(p => (
-            <span key={p.minutes} className="text-xs px-3 py-1.5 bg-gray-100 rounded-full text-gray-500 font-semibold">
-              {p.label} (기본)
-            </span>
-          ))}
-          {customAlarmPresets.map(m => (
-            <div key={m} className="flex items-center gap-1 bg-blue-50 border border-blue-200 rounded-full px-3 py-1">
-              <span className="text-xs font-semibold text-blue-700">{m < 60 ? `${m}분 전` : `${m / 60}시간 전`}</span>
-              <button onClick={() => setCustomAlarmPresets(p => p.filter(x => x !== m))}
-                className="text-gray-300 hover:text-red-400 text-xs ml-1">✕</button>
+            <div key={p.minutes} className="flex items-center justify-between py-1">
+              <span className="text-sm font-semibold text-gray-700">{p.label}</span>
+              <button
+                onClick={() => setAlarmPresets(prev => ({ ...prev, [p.minutes]: !prev[p.minutes] }))}
+                className={`relative w-12 h-6 rounded-full transition-colors ${alarmPresets[p.minutes] ? 'bg-blue-500' : 'bg-gray-200'}`}>
+                <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${alarmPresets[p.minutes] ? 'translate-x-6' : 'translate-x-0.5'}`} />
+              </button>
             </div>
           ))}
+
+          {/* 커스텀 프리셋 토글 */}
+          {customAlarmPresets.map(m => {
+            const label = m < 60 ? `${m}분 전` : `${m / 60}시간 전`;
+            return (
+              <div key={m} className="flex items-center justify-between py-1">
+                <span className="text-sm font-semibold text-gray-700">{label}</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setAlarmPresets(prev => ({ ...prev, [m]: !prev[m] }))}
+                    className={`relative w-12 h-6 rounded-full transition-colors ${alarmPresets[m] ? 'bg-blue-500' : 'bg-gray-200'}`}>
+                    <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${alarmPresets[m] ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                  </button>
+                  <button onClick={() => { setCustomAlarmPresets(p => p.filter(x => x !== m)); setAlarmPresets(prev => { const n = { ...prev }; delete n[m]; return n; }); }}
+                    className="text-gray-300 hover:text-red-400 text-sm">✕</button>
+                </div>
+              </div>
+            );
+          })}
         </div>
-        <div className="flex gap-2 items-center">
+
+        {/* 커스텀 추가 */}
+        <div className="flex gap-2 items-center mt-4 pt-4 border-t border-gray-100">
           <input
             type="number" min="1" placeholder="분 단위 입력 (예: 90)"
             value={newPresetInput}

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { VENDORS } from './constants/vendors';
-import { calcFeeInfo, parseFeeToAmount } from './utils/fees';
+import { VENDORS, ALARM_PRESETS } from './constants/vendors';
+import { calcFeeInfo, parseFeeToAmount, calculateTimeline } from './utils/fees';
 import { fireNotification, requestNotifPermission } from './utils/notifications';
 import AddForm from './components/AddForm';
 import ReservationCard from './components/ReservationCard';
@@ -20,6 +20,10 @@ export default function App() {
   });
   const [customAlarmPresets, setCustomAlarmPresets] = useState(() => {
     try { return JSON.parse(localStorage.getItem('customAlarmPresets')) ?? []; } catch { return []; }
+  });
+  // 알림 간격 켜기/끄기 (minutes → boolean)
+  const [alarmPresets, setAlarmPresets] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('alarmPresets')) ?? { 30: true, 60: true, 180: false, 1440: true }; } catch { return { 30: true, 60: true, 180: false, 1440: true }; }
   });
 
   // 폼 상태
@@ -64,6 +68,7 @@ export default function App() {
   useEffect(() => { localStorage.setItem('reservations',       JSON.stringify(reservations));       }, [reservations]);
   useEffect(() => { localStorage.setItem('savedRoutes',        JSON.stringify(savedRoutes));        }, [savedRoutes]);
   useEffect(() => { localStorage.setItem('customAlarmPresets', JSON.stringify(customAlarmPresets)); }, [customAlarmPresets]);
+  useEffect(() => { localStorage.setItem('alarmPresets', JSON.stringify(alarmPresets)); }, [alarmPresets]);
 
   // 알림 체크
   useEffect(() => {
@@ -174,28 +179,45 @@ export default function App() {
     setDestination(route.destination);
   };
 
-  // ── 알림 ──
-  const toggleAlarmMinutes = async (resId, tier, minutes) => {
-    const key = `${tier.id}-m${minutes}`;
+  // ── 알림 ── 카드 종 아이콘 탭 → 켜진 간격 전체 등록/해제
+  const toggleCardAlarm = async (resId) => {
     const res = reservations.find(r => r.id === resId);
-    const isOn = !!res?.alarms[key];
-    if (isOn) {
-      setReservations(p => p.map(r => {
-        if (r.id !== resId) return r;
-        const next = { ...r.alarms }; delete next[key]; return { ...r, alarms: next };
-      }));
-      showToast('알림을 해제했습니다.'); return;
+    if (!res) return;
+    // 이미 알람 있으면 전체 해제
+    if (Object.keys(res.alarms ?? {}).length > 0) {
+      setReservations(p => p.map(r => r.id === resId ? { ...r, alarms: {} } : r));
+      showToast('알림을 모두 해제했습니다.'); return;
     }
     if (!(await requestNotifPermission())) {
       showToast('알림 권한이 없습니다. 브라우저 설정에서 허용해 주세요.'); return;
     }
-    const notifyAt = tier.untilTime.getTime() - minutes * 60000;
-    if (notifyAt <= Date.now()) { showToast('이미 지난 시각이라 알림을 설정할 수 없습니다.'); return; }
-    setReservations(p => p.map(r =>
-      r.id === resId ? { ...r, alarms: { ...r.alarms, [key]: { active: true, notifyAt, label: tier.label, alarmMinutes: minutes } } } : r
-    ));
-    const t = new Date(notifyAt).toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-    showToast(`알림 설정 — ${t}에 알려드립니다.`);
+    const vendor = VENDORS.find(v => v.id === res.vendorType) ?? VENDORS[0];
+    const timeline = calculateTimeline(res.date, res.time, vendor.rules);
+    // 켜진 간격 수집
+    const activeMinutes = [
+      ...ALARM_PRESETS.map(p => p.minutes).filter(m => alarmPresets[m]),
+      ...customAlarmPresets.filter(m => alarmPresets[m]),
+    ];
+    if (activeMinutes.length === 0) {
+      showToast('설정에서 알림 간격을 하나 이상 켜주세요.'); return;
+    }
+    const newAlarms = {};
+    const set = [];
+    for (const tier of timeline) {
+      for (const m of activeMinutes) {
+        const notifyAt = tier.untilTime.getTime() - m * 60000;
+        if (notifyAt <= Date.now()) continue;
+        const key = `${tier.id}-m${m}`;
+        const label = m < 60 ? `${m}분 전` : m < 1440 ? `${m/60}시간 전` : '1일 전';
+        newAlarms[key] = { active: true, notifyAt, label: tier.label, alarmMinutes: m };
+        set.push(new Date(notifyAt).toLocaleString('ko-KR', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }));
+      }
+    }
+    if (Object.keys(newAlarms).length === 0) {
+      showToast('설정 가능한 알림 시각이 없습니다 (모두 지난 시각).'); return;
+    }
+    setReservations(p => p.map(r => r.id === resId ? { ...r, alarms: newAlarms } : r));
+    showToast(`🔔 알림 ${Object.keys(newAlarms).length}개 설정됨`);
   };
 
   // ── 취소 처리 ──
@@ -441,12 +463,11 @@ export default function App() {
                   res={res}
                   now={now}
                   editingId={editingId}
-                  customAlarmPresets={customAlarmPresets}
                   onEdit={handleStartEdit}
                   onDelete={(id) => setDeleteConfirmId(id)}
                   onStatusChange={handleStatusChange}
                   onToggleExpand={toggleExpand}
-                  onToggleAlarm={toggleAlarmMinutes}
+                  onToggleAlarm={toggleCardAlarm}
                 />
               ))}
             </section>
@@ -457,6 +478,8 @@ export default function App() {
 
         {activeTab === 'settings' && (
           <SettingsTab
+            alarmPresets={alarmPresets}
+            setAlarmPresets={setAlarmPresets}
             customAlarmPresets={customAlarmPresets}
             setCustomAlarmPresets={setCustomAlarmPresets}
             savedRoutes={savedRoutes}

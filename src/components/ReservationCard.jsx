@@ -1,7 +1,7 @@
 import { fmtFee, fmtMoney, getDday, calculateTimeline, getNextTierInfo, getCurrentTier } from '../utils/fees';
-import { VENDORS, ALARM_PRESETS } from '../constants/vendors';
+import { VENDORS } from '../constants/vendors';
 
-export default function ReservationCard({ res, now, editingId, customAlarmPresets, onEdit, onDelete, onStatusChange, onToggleExpand, onToggleAlarm }) {
+export default function ReservationCard({ res, now, editingId, onEdit, onDelete, onStatusChange, onToggleExpand, onToggleAlarm }) {
   const vendor   = VENDORS.find(v => v.id === res.vendorType) ?? VENDORS[0];
   const timeline = calculateTimeline(res.date, res.time, vendor.rules);
   const isCanceled = res.status === '취소함' || res.status === '놓침';
@@ -20,10 +20,7 @@ export default function ReservationCard({ res, now, editingId, customAlarmPreset
   const curTier  = isScheduled ? getCurrentTier(timeline, now) : null;
   const curFeeDisplay = curTier ? fmtFee(curTier.actualFee, res.price) : null;
 
-  const allPresets = [
-    ...ALARM_PRESETS,
-    ...customAlarmPresets.map(m => ({ minutes: m, label: m < 60 ? `${m}분 전` : `${m / 60}시간 전` })),
-  ];
+  const hasAlarm = Object.keys(res.alarms ?? {}).length > 0;
 
   let statusColor = 'bg-blue-100 text-blue-800';
   if (res.status === '이용완료') statusColor = 'bg-green-100 text-green-800';
@@ -55,6 +52,13 @@ export default function ReservationCard({ res, now, editingId, customAlarmPreset
               <option value="취소함">취소함</option>
               <option value="놓침">놓침(노쇼)</option>
             </select>
+            {isScheduled && (
+              <button onClick={() => onToggleAlarm(res.id)}
+                title={hasAlarm ? '알림 해제' : '알림 설정'}
+                className={`text-lg transition-all ${hasAlarm ? 'text-blue-500' : 'text-gray-300 hover:text-blue-400'}`}>
+                {hasAlarm ? '🔔' : '🔕'}
+              </button>
+            )}
             {!isCanceled && (
               <button onClick={() => onEdit(res)} className="text-gray-400 hover:text-amber-500">✏️</button>
             )}
@@ -161,21 +165,18 @@ export default function ReservationCard({ res, now, editingId, customAlarmPreset
                       <span className={`text-lg font-extrabold ${feeFmt.isFree ? 'text-green-600' : 'text-red-600'}`}>{feeFmt.main}</span>
                       {feeFmt.sub && <span className="text-xs text-gray-400">({feeFmt.sub})</span>}
                     </div>
-                    {!isTimePast && !isPast && (
-                      <div className="flex gap-1.5 flex-wrap">
-                        {allPresets.map(preset => {
-                          const key = `${tier.id}-m${preset.minutes}`;
-                          const active = !!res.alarms[key];
-                          return (
-                            <button key={preset.minutes} onClick={() => onToggleAlarm(res.id, tier, preset.minutes)}
-                              className={`text-[11px] px-2 py-1 rounded-full flex items-center gap-1 border font-semibold transition-all ${
-                                active ? 'bg-blue-100 border-blue-400 text-blue-700' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'}`}>
-                              {active ? '🔔' : '🔕'} {preset.label}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
+                    {!isTimePast && !isPast && hasAlarm && (() => {
+                      const tierAlarms = Object.entries(res.alarms ?? {}).filter(([k]) => k.startsWith(`${tier.id}-`));
+                      if (!tierAlarms.length) return null;
+                      return (
+                        <div className="flex gap-1 flex-wrap mt-1">
+                          {tierAlarms.map(([k, a]) => {
+                            const label = a.alarmMinutes < 60 ? `${a.alarmMinutes}분 전` : a.alarmMinutes < 1440 ? `${a.alarmMinutes/60}시간 전` : '1일 전';
+                            return <span key={k} className="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-600 font-semibold">🔔 {label}</span>;
+                          })}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               );
