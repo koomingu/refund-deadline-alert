@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { VENDORS } from '../constants/vendors';
 import { StationSelectModal } from './StationMap';
+import { estimatePrice } from '../utils/prices';
 
 const Loader = () => (
   <span className="animate-spin inline-block text-2xl">⟳</span>
@@ -99,25 +100,6 @@ export default function AddForm({
               {previewDataList.length}건 모두 등록하기
             </button>
           )}
-        </div>
-      )}
-
-      {/* 즐겨찾기 노선 — 항상 표시 */}
-      {!editingId && savedRoutes.length > 0 && (
-        <div className="px-5 pb-3">
-          <p className="text-xs font-bold text-gray-400 mb-2">⭐ 즐겨찾기 노선</p>
-          <div className="flex gap-1.5 flex-wrap">
-            {savedRoutes.map(route => (
-              <button
-                key={route.id}
-                type="button"
-                onClick={() => onApplyRoute(route)}
-                className="flex items-center gap-1 bg-blue-50 border border-blue-200 rounded-full px-3 py-1.5 hover:bg-blue-100 transition-colors">
-                <span className="text-[10px] text-blue-400 font-bold">{route.vendorName}</span>
-                <span className="text-xs font-bold text-blue-800">{route.label}</span>
-              </button>
-            ))}
-          </div>
         </div>
       )}
 
@@ -240,8 +222,12 @@ export default function AddForm({
           vendorType={vendorType}
           field={stationModal}
           onSelect={(name) => {
+            const newOrigin      = stationModal === 'origin'      ? name : origin;
+            const newDestination = stationModal === 'destination' ? name : destination;
             if (stationModal === 'origin') setOrigin(name);
             else setDestination(name);
+            const estimated = estimatePrice(vendorType, newOrigin, newDestination);
+            if (estimated) setPrice(String(estimated));
           }}
           onClose={() => setStationModal(null)}
         />

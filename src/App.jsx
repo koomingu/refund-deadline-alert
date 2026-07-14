@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { VENDORS, ALARM_PRESETS } from './constants/vendors';
 import { calcFeeInfo, parseFeeToAmount, calculateTimeline } from './utils/fees';
+import { estimatePrice } from './utils/prices';
 import { fireNotification, requestNotifPermission } from './utils/notifications';
 import AddForm from './components/AddForm';
 import ReservationCard from './components/ReservationCard';
@@ -177,6 +178,9 @@ export default function App() {
     setVendorType(route.vendorType);
     setOrigin(route.origin);
     setDestination(route.destination);
+    const est = estimatePrice(route.vendorType, route.origin, route.destination);
+    if (est) setPrice(String(est));
+    setShowManualForm(true);
   };
 
   // ── 알림 ── 카드 종 아이콘 탭 → 켜진 간격 전체 등록/해제
