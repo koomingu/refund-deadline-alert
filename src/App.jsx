@@ -32,6 +32,7 @@ export default function App() {
   });
   const [origin, setOrigin]                 = useState('');
   const [destination, setDestination]       = useState('');
+  const [arrivalTime, setArrivalTime]       = useState('');
   const [price, setPrice]                   = useState('');
   const [showManualForm, setShowManualForm] = useState(false);
 
@@ -105,7 +106,7 @@ export default function App() {
     setEditingId(null); setVendorType('ktx');
     setDate(n.toISOString().split('T')[0]);
     setTime(`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`);
-    setOrigin(''); setDestination(''); setPrice('');
+    setOrigin(''); setDestination(''); setArrivalTime(''); setPrice('');
     setPreviewDataList([]); setShowManualForm(false);
   };
 
@@ -122,6 +123,7 @@ export default function App() {
       date, time,
       origin: origin || '출발지',
       destination: destination || '도착지',
+      arrivalTime: arrivalTime || '',
       price: Number(price) || 0,
       rules: vendor.rules,
       alarms: base?.alarms ?? {}, isExpanded: false,
@@ -141,6 +143,7 @@ export default function App() {
     setDate(res.date); setTime(res.time);
     setOrigin(res.origin === '출발지' ? '' : res.origin);
     setDestination(res.destination === '도착지' ? '' : res.destination);
+    setArrivalTime(res.arrivalTime || '');
     setPrice(res.price ? String(res.price) : '');
     setShowManualForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -272,7 +275,7 @@ export default function App() {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{ role: 'user', parts: [
-              { text: '이 이미지에서 모든 승차권 정보를 추출해줘. 여러 매가 있으면 모두 추출해. vendorType은 ktx/srt/bus 중 하나로, date는 YYYY-MM-DD, time은 출발 시각 HH:MM 형식으로 추출해줘. origin과 destination은 도시 또는 역명으로 추출해줘. price는 결제 금액(숫자, 원 단위)을 추출해줘.' },
+              { text: '이 이미지에서 모든 승차권 정보를 추출해줘. 여러 매가 있으면 모두 추출해. vendorType은 ktx/srt/bus 중 하나로, date는 YYYY-MM-DD, time은 출발 시각 HH:MM, arrivalTime은 도착 시각 HH:MM 형식으로 추출해줘. origin과 destination은 도시 또는 역명으로 추출해줘. price는 결제 금액(숫자, 원 단위)을 추출해줘.' },
               { inlineData: { mimeType, data: base64Image } },
             ]}],
             generationConfig: {
@@ -290,6 +293,7 @@ export default function App() {
                         time:        { type: 'STRING' },
                         origin:      { type: 'STRING' },
                         destination: { type: 'STRING' },
+                        arrivalTime: { type: 'STRING' },
                         price:       { type: 'NUMBER' },
                       },
                     },
@@ -333,6 +337,7 @@ export default function App() {
       vendorType: vendor.id, vendorName: vendor.name,
       date: data.date, time: data.time,
       origin: data.origin || '출발지', destination: data.destination || '도착지',
+      arrivalTime: data.arrivalTime || '',
       price: Number(data.price) || 0, rules: vendor.rules,
       alarms: {}, isExpanded: false,
       status: '예정', cancelInfo: null,
@@ -400,6 +405,7 @@ export default function App() {
               time={time} setTime={setTime}
               origin={origin} setOrigin={setOrigin}
               destination={destination} setDestination={setDestination}
+              arrivalTime={arrivalTime} setArrivalTime={setArrivalTime}
               price={price} setPrice={setPrice}
               showManualForm={showManualForm} setShowManualForm={setShowManualForm}
               savedRoutes={savedRoutes}

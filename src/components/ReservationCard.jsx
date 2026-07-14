@@ -8,6 +8,12 @@ export default function ReservationCard({ res, now, editingId, customAlarmPreset
   const isScheduled = res.status === '예정';
   const isBeingEdited = editingId === res.id;
 
+  const depDT    = new Date(`${res.date}T${res.time}`);
+  const arrDT    = res.arrivalTime ? new Date(`${res.date}T${res.arrivalTime}`) : null;
+  // 도착이 출발보다 이르면 다음날로 처리 (예: 23:30 출발 → 01:00 도착)
+  if (arrDT && arrDT <= depDT) arrDT?.setDate(arrDT.getDate() + 1);
+  const isInNoShowWindow = isScheduled && now > depDT && arrDT && now < arrDT;
+
   const dday    = isScheduled ? getDday(res.date, res.time, now) : null;
   const nextTier = isScheduled ? getNextTierInfo(timeline, now) : null;
   const curTier  = isScheduled ? getCurrentTier(timeline, now) : null;
@@ -76,7 +82,14 @@ export default function ReservationCard({ res, now, editingId, customAlarmPreset
           )}
         </div>
 
-        {/* 3행: 수수료 변경 배너 */}
+        {/* 3행: 노쇼 환불 안내 배너 */}
+        {isInNoShowWindow && (
+          <div className="mt-3 text-xs font-semibold px-3 py-2 rounded-lg bg-purple-50 text-purple-800 border border-purple-200">
+            🚉 출발 후 도착({res.arrivalTime}) 전 — <span className="font-extrabold">창구 방문 시 70% 환불 가능</span>
+          </div>
+        )}
+
+        {/* 4행: 수수료 변경 배너 */}
         {nextTier && (() => {
           const curFmt  = fmtFee(nextTier.curActualFee,  res.price);
           const nextFmt = fmtFee(nextTier.nextActualFee, res.price);

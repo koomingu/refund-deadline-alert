@@ -12,6 +12,7 @@ export default function AddForm({
   time, setTime,
   origin, setOrigin,
   destination, setDestination,
+  arrivalTime, setArrivalTime,
   price, setPrice,
   showManualForm, setShowManualForm,
   savedRoutes, onSaveRoute, onDeleteRoute, onApplyRoute,
@@ -144,6 +145,13 @@ export default function AddForm({
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1">출발 시각</label>
               <input type="time" value={time} onChange={e => setTime(e.target.value)}
+                className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                도착 시각 <span className="text-gray-400 font-normal">(선택)</span>
+              </label>
+              <input type="time" value={arrivalTime} onChange={e => setArrivalTime(e.target.value)}
                 className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
             </div>
           </div>
