@@ -192,11 +192,13 @@ export default function AddForm({
                   destination ? 'border-orange-400 text-orange-800 font-semibold bg-orange-50' : 'border-gray-300 text-gray-400'}`}>
                 {destination || '도착역 선택'}
               </button>
-              <button type="button" onClick={onSaveRoute} title="자주 가는 노선으로 저장"
-                className="shrink-0 p-2.5 border border-gray-300 rounded-lg text-gray-400 hover:text-yellow-500 hover:border-yellow-400 transition-colors">
-                ⭐
-              </button>
             </div>
+            {origin && destination && (
+              <button type="button" onClick={onSaveRoute}
+                className="mt-2 w-full py-2 text-xs font-semibold text-yellow-700 bg-yellow-50 border border-yellow-200 rounded-lg hover:bg-yellow-100 transition-colors">
+                ⭐ 이 노선 즐겨찾기에 추가
+              </button>
+            )}
             {savedRoutes.length > 0 && (
               <div className="mt-2 flex gap-1.5 flex-wrap">
                 {savedRoutes.map(route => (
