@@ -25,8 +25,11 @@ export default function App() {
   // 폼 상태
   const [editingId, setEditingId]           = useState(null);
   const [vendorType, setVendorType]         = useState('ktx');
-  const [date, setDate]                     = useState('');
-  const [time, setTime]                     = useState('');
+  const [date, setDate]                     = useState(() => new Date().toISOString().split('T')[0]);
+  const [time, setTime]                     = useState(() => {
+    const n = new Date();
+    return `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
+  });
   const [origin, setOrigin]                 = useState('');
   const [destination, setDestination]       = useState('');
   const [price, setPrice]                   = useState('');
@@ -98,8 +101,11 @@ export default function App() {
   }, []);
 
   const resetForm = () => {
+    const n = new Date();
     setEditingId(null); setVendorType('ktx');
-    setDate(''); setTime(''); setOrigin(''); setDestination(''); setPrice('');
+    setDate(n.toISOString().split('T')[0]);
+    setTime(`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`);
+    setOrigin(''); setDestination(''); setPrice('');
     setPreviewDataList([]); setShowManualForm(false);
   };
 
@@ -266,7 +272,7 @@ export default function App() {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{ role: 'user', parts: [
-              { text: '이 이미지에서 모든 승차권 정보를 추출해줘. 여러 매가 있으면 모두 추출해. vendorType은 ktx/srt/bus 중 하나로, date는 YYYY-MM-DD, time은 HH:MM 형식으로 추출해줘. origin과 destination은 도시 또는 역명으로 추출해줘.' },
+              { text: '이 이미지에서 모든 승차권 정보를 추출해줘. 여러 매가 있으면 모두 추출해. vendorType은 ktx/srt/bus 중 하나로, date는 YYYY-MM-DD, time은 출발 시각 HH:MM 형식으로 추출해줘. origin과 destination은 도시 또는 역명으로 추출해줘. price는 결제 금액(숫자, 원 단위)을 추출해줘.' },
               { inlineData: { mimeType, data: base64Image } },
             ]}],
             generationConfig: {
@@ -284,6 +290,7 @@ export default function App() {
                         time:        { type: 'STRING' },
                         origin:      { type: 'STRING' },
                         destination: { type: 'STRING' },
+                        price:       { type: 'NUMBER' },
                       },
                     },
                   },
@@ -310,7 +317,11 @@ export default function App() {
       setPreviewDataList(list);
       showToast(`${list.length}건의 예매 정보를 추출했습니다!`);
     } catch (err) {
-      showToast(`인식 실패: ${err.message}`);
+      const isQuota = err.message?.includes('quota') || err.message?.includes('Quota');
+      showToast(isQuota
+        ? '잠시 후 다시 시도해 주세요. (API 요청 한도 초과)'
+        : '이미지를 인식하지 못했어요. 다시 시도하거나 직접 입력해 주세요.'
+      );
     } finally { setIsAnalyzing(false); }
   };
 
@@ -322,7 +333,7 @@ export default function App() {
       vendorType: vendor.id, vendorName: vendor.name,
       date: data.date, time: data.time,
       origin: data.origin || '출발지', destination: data.destination || '도착지',
-      price: 0, rules: vendor.rules,
+      price: Number(data.price) || 0, rules: vendor.rules,
       alarms: {}, isExpanded: false,
       status: '예정', cancelInfo: null,
       createdAt: new Date().toISOString(),
