@@ -459,6 +459,8 @@ export default function App() {
           <SettingsTab
             customAlarmPresets={customAlarmPresets}
             setCustomAlarmPresets={setCustomAlarmPresets}
+            savedRoutes={savedRoutes}
+            setSavedRoutes={setSavedRoutes}
             showToast={showToast}
           />
         )}
