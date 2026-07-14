@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { BUS_CITIES } from '../constants/stations';
 
 const SRT_MAIN = [
@@ -227,4 +227,110 @@ export default function StationMap({ vendorType, onSelect }) {
   if (vendorType === 'srt') return <SrtPicker {...props} />;
   if (vendorType === 'ktx') return <KtxPicker {...props} />;
   return <BusPicker {...props} />;
+}
+
+// 단일 역 선택 모달 (AddForm에서 출발지/도착지 선택용)
+function SingleStationGrid({ vendorType, onSelect }) {
+  const [activeIdx, setActiveIdx] = useState('ㄱ');
+
+  if (vendorType === 'srt') {
+    return (
+      <div className="space-y-4">
+        <div>
+          <p className="text-[11px] font-bold text-gray-400 mb-1.5">주요 역</p>
+          <div className="grid grid-cols-4 gap-1.5">
+            {SRT_MAIN.map(n => (
+              <button key={n} onClick={() => onSelect(n)}
+                className="py-2 px-1 text-xs rounded-lg font-semibold border bg-white text-gray-700 border-gray-200 hover:bg-blue-50 hover:border-blue-400 hover:text-blue-700 transition-all">
+                {n}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <p className="text-[11px] font-bold text-gray-400 mb-1.5">전체 역</p>
+          <div className="grid grid-cols-4 gap-1.5">
+            {SRT_ALL.map(n => (
+              <button key={n} onClick={() => onSelect(n)}
+                className="py-2 px-1 text-xs rounded-lg font-semibold border bg-white text-gray-700 border-gray-200 hover:bg-blue-50 hover:border-blue-400 hover:text-blue-700 transition-all">
+                {n}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (vendorType === 'ktx') {
+    const filtered = KTX_ALL.filter(n => getChosung(n) === activeIdx);
+    return (
+      <div className="space-y-3">
+        <div className="flex flex-wrap gap-1">
+          {CHOSUNG.map(cho => {
+            const has = KTX_ALL.some(n => getChosung(n) === cho);
+            return (
+              <button key={cho} onClick={() => setActiveIdx(cho)} disabled={!has}
+                className={`w-8 h-8 text-xs font-bold rounded-lg border transition-all ${
+                  activeIdx === cho ? 'bg-blue-600 text-white border-blue-600' :
+                  has ? 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50' :
+                  'bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed'}`}>
+                {cho}
+              </button>
+            );
+          })}
+        </div>
+        <div className="grid grid-cols-4 gap-1.5">
+          {filtered.map(n => (
+            <button key={n} onClick={() => onSelect(n)}
+              className="py-2 px-1 text-xs rounded-lg font-semibold border bg-white text-gray-700 border-gray-200 hover:bg-blue-50 hover:border-blue-400 hover:text-blue-700 transition-all truncate">
+              {n}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // 버스
+  return (
+    <div className="grid grid-cols-4 gap-1.5">
+      {BUS_CITIES.map(n => (
+        <button key={n} onClick={() => onSelect(n)}
+          className="py-2 px-1 text-xs rounded-lg font-semibold border bg-white text-gray-700 border-gray-200 hover:bg-blue-50 hover:border-blue-400 hover:text-blue-700 transition-all">
+          {n}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export function StationSelectModal({ vendorType, field, onSelect, onClose }) {
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
+
+  const label = field === 'origin' ? '출발역 선택' : '도착역 선택';
+  const vendorLabel = vendorType === 'srt' ? 'SRT' : vendorType === 'ktx' ? 'KTX' : '버스';
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col bg-black/40" onClick={onClose}>
+      <div className="mt-auto bg-white rounded-t-2xl max-h-[85vh] flex flex-col"
+           onClick={e => e.stopPropagation()}>
+        {/* 헤더 */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
+          <div>
+            <h2 className="text-base font-bold text-gray-900">{label}</h2>
+            <p className="text-xs text-gray-400">{vendorLabel}</p>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 text-xl">✕</button>
+        </div>
+        {/* 콘텐츠 */}
+        <div className="overflow-y-auto p-4">
+          <SingleStationGrid vendorType={vendorType} onSelect={(name) => { onSelect(name); onClose(); }} />
+        </div>
+      </div>
+    </div>
+  );
 }

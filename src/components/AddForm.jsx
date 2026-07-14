@@ -1,5 +1,6 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { VENDORS } from '../constants/vendors';
+import { StationSelectModal } from './StationMap';
 
 const Loader = () => (
   <span className="animate-spin inline-block text-2xl">⟳</span>
@@ -21,6 +22,7 @@ export default function AddForm({
   onSubmit, onCancelEdit,
 }) {
   const fileInputRef = useRef(null);
+  const [stationModal, setStationModal] = useState(null); // 'origin' | 'destination' | null
 
   return (
     <section className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -177,12 +179,19 @@ export default function AddForm({
 
           {/* 출발지/도착지 */}
           <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">출발지 → 도착지</label>
             <div className="flex gap-2 items-center">
-              <input type="text" value={origin} onChange={e => setOrigin(e.target.value)} placeholder="출발지(선택)"
-                className="flex-1 p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
+              <button type="button" onClick={() => setStationModal('origin')}
+                className={`flex-1 p-2.5 border rounded-lg text-sm text-left transition-all ${
+                  origin ? 'border-blue-400 text-blue-800 font-semibold bg-blue-50' : 'border-gray-300 text-gray-400'}`}>
+                {origin || '출발역 선택'}
+              </button>
               <span className="text-gray-400 shrink-0">→</span>
-              <input type="text" value={destination} onChange={e => setDestination(e.target.value)} placeholder="도착지(선택)"
-                className="flex-1 p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
+              <button type="button" onClick={() => setStationModal('destination')}
+                className={`flex-1 p-2.5 border rounded-lg text-sm text-left transition-all ${
+                  destination ? 'border-orange-400 text-orange-800 font-semibold bg-orange-50' : 'border-gray-300 text-gray-400'}`}>
+                {destination || '도착역 선택'}
+              </button>
               <button type="button" onClick={onSaveRoute} title="자주 가는 노선으로 저장"
                 className="shrink-0 p-2.5 border border-gray-300 rounded-lg text-gray-400 hover:text-yellow-500 hover:border-yellow-400 transition-colors">
                 ⭐
@@ -222,6 +231,18 @@ export default function AddForm({
             {editingId ? '수정 완료' : '예매 등록'}
           </button>
         </form>
+      )}
+
+      {stationModal && (
+        <StationSelectModal
+          vendorType={vendorType}
+          field={stationModal}
+          onSelect={(name) => {
+            if (stationModal === 'origin') setOrigin(name);
+            else setDestination(name);
+          }}
+          onClose={() => setStationModal(null)}
+        />
       )}
     </section>
   );
