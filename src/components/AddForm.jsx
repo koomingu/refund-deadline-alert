@@ -15,8 +15,8 @@ export default function AddForm({
   price, setPrice,
   showManualForm, setShowManualForm,
   savedRoutes, onSaveRoute, onDeleteRoute, onApplyRoute,
-  isAnalyzing, previewData, setPreviewData,
-  onImageUpload, onApplyPreview,
+  isAnalyzing, previewDataList, setPreviewDataList,
+  onImageUpload, onApplyPreviewItem, onApplyAllPreviewItems,
   onSubmit, onCancelEdit,
 }) {
   const fileInputRef = useRef(null);
@@ -56,24 +56,46 @@ export default function AddForm({
         </div>
       )}
 
-      {/* 캡처 결과 확인 */}
-      {previewData && (
-        <div className="mx-5 mb-4 p-4 bg-indigo-50 border border-indigo-200 rounded-xl">
-          <div className="flex justify-between items-center mb-3">
-            <span className="font-bold text-indigo-800">추출된 정보 확인</span>
-            <button onClick={() => setPreviewData(null)} className="text-gray-400">✕</button>
+      {/* 캡처 결과 확인 — 여러 건 */}
+      {previewDataList.length > 0 && (
+        <div className="mx-5 mb-4 space-y-3">
+          <div className="flex justify-between items-center">
+            <span className="font-bold text-indigo-800 text-sm">
+              추출된 예매 {previewDataList.length}건
+            </span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setPreviewDataList([]); fileInputRef.current?.click(); }}
+                className="text-xs text-gray-500 border border-gray-300 rounded-lg px-3 py-1.5 hover:bg-gray-50">
+                다시 업로드
+              </button>
+              <button onClick={() => setPreviewDataList([])} className="text-gray-400 text-sm px-1">✕</button>
+            </div>
           </div>
-          <div className="grid grid-cols-2 gap-2 text-sm text-indigo-900 bg-white p-3 rounded-lg mb-3">
-            <div><span className="text-indigo-400">종류 </span>{previewData.vendorType || '미인식'}</div>
-            <div><span className="text-indigo-400">날짜 </span>{previewData.date || '미인식'}</div>
-            <div><span className="text-indigo-400">시간 </span>{previewData.time || '미인식'}</div>
-            <div><span className="text-indigo-400">여정 </span>{previewData.origin} → {previewData.destination}</div>
-          </div>
-          <button
-            onClick={onApplyPreview}
-            className="w-full bg-indigo-600 text-white font-bold py-2.5 rounded-lg hover:bg-indigo-700">
-            이 정보로 등록하기
-          </button>
+
+          {previewDataList.map((item, i) => (
+            <div key={i} className="p-4 bg-indigo-50 border border-indigo-200 rounded-xl">
+              <div className="grid grid-cols-2 gap-2 text-sm text-indigo-900 bg-white p-3 rounded-lg mb-3">
+                <div><span className="text-indigo-400">종류 </span>{(item.vendorType || '미인식').toUpperCase()}</div>
+                <div><span className="text-indigo-400">날짜 </span>{item.date || '미인식'}</div>
+                <div><span className="text-indigo-400">시간 </span>{item.time || '미인식'}</div>
+                <div><span className="text-indigo-400">여정 </span>{item.origin} → {item.destination}</div>
+              </div>
+              <button
+                onClick={() => onApplyPreviewItem(item)}
+                className="w-full bg-indigo-600 text-white font-bold py-2.5 rounded-lg hover:bg-indigo-700 text-sm">
+                이 예매 등록하기
+              </button>
+            </div>
+          ))}
+
+          {previewDataList.length > 1 && (
+            <button
+              onClick={onApplyAllPreviewItems}
+              className="w-full bg-blue-700 text-white font-bold py-3 rounded-xl hover:bg-blue-800 text-sm shadow">
+              {previewDataList.length}건 모두 등록하기
+            </button>
+          )}
         </div>
       )}
 

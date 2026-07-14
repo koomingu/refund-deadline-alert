@@ -3,6 +3,14 @@ import { ALARM_PRESETS } from '../constants/vendors';
 
 export default function SettingsTab({ customAlarmPresets, setCustomAlarmPresets, showToast }) {
   const [newPresetInput, setNewPresetInput] = useState('');
+  const [apiKeyInput, setApiKeyInput] = useState(() => localStorage.getItem('geminiApiKey') || '');
+  const [showApiKey, setShowApiKey] = useState(false);
+
+  const handleSaveApiKey = () => {
+    const trimmed = apiKeyInput.trim();
+    localStorage.setItem('geminiApiKey', trimmed);
+    showToast(trimmed ? 'API 키가 저장되었습니다.' : 'API 키가 삭제되었습니다.');
+  };
 
   const handleAdd = () => {
     const m = parseInt(newPresetInput, 10);
@@ -17,6 +25,39 @@ export default function SettingsTab({ customAlarmPresets, setCustomAlarmPresets,
 
   return (
     <section className="space-y-4 mt-4">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+        <h3 className="text-base font-bold text-gray-800 mb-1">Gemini API 키</h3>
+        <p className="text-xs text-gray-400 mb-4">
+          승차권 이미지 자동 인식에 사용됩니다.{' '}
+          <a href="https://aistudio.google.com" target="_blank" rel="noreferrer" className="text-blue-500 underline">aistudio.google.com</a>
+          {' '}에서 무료로 발급받을 수 있어요.
+        </p>
+        <div className="flex gap-2 items-center">
+          <div className="relative flex-1">
+            <input
+              type={showApiKey ? 'text' : 'password'}
+              placeholder="API 키를 입력하세요"
+              value={apiKeyInput}
+              onChange={e => setApiKeyInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleSaveApiKey()}
+              className="w-full p-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500 pr-10"
+            />
+            <button
+              onClick={() => setShowApiKey(v => !v)}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
+              {showApiKey ? '숨기기' : '보기'}
+            </button>
+          </div>
+          <button
+            onClick={handleSaveApiKey}
+            className="shrink-0 px-4 py-2.5 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 text-sm">
+            저장
+          </button>
+        </div>
+        {localStorage.getItem('geminiApiKey') && (
+          <p className="text-xs text-green-600 mt-2 font-semibold">✓ API 키가 저장되어 있습니다.</p>
+        )}
+      </div>
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
         <h3 className="text-base font-bold text-gray-800 mb-1">알림 프리셋 관리</h3>
         <p className="text-xs text-gray-400 mb-4">수수료 구간 변경 전 알림을 받을 시간을 직접 추가할 수 있습니다.</p>

@@ -36,7 +36,7 @@ export default function App() {
   const [toasts, setToasts]                   = useState([]);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const [isAnalyzing, setIsAnalyzing]         = useState(false);
-  const [previewData, setPreviewData]         = useState(null);
+  const [previewDataList, setPreviewDataList] = useState([]);
 
   // 취소 모달
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
@@ -100,7 +100,7 @@ export default function App() {
   const resetForm = () => {
     setEditingId(null); setVendorType('ktx');
     setDate(''); setTime(''); setOrigin(''); setDestination(''); setPrice('');
-    setPreviewData(null); setShowManualForm(false);
+    setPreviewDataList([]); setShowManualForm(false);
   };
 
   // ── 예매 ──
@@ -241,6 +241,7 @@ export default function App() {
     const files = Array.from(e.target.files);
     if (!files.length) return;
     setIsAnalyzing(true);
+    setPreviewDataList([]);
     const reader = new FileReader();
     reader.onload = async (ev) => {
       try { await processImageWithGemini(ev.target.result); }
@@ -251,7 +252,10 @@ export default function App() {
   };
 
   const processImageWithGemini = async (base64Data) => {
-    const apiKey = '';  // ✏️ Gemini API 키를 여기에 입력하세요
+    const apiKey = localStorage.getItem('geminiApiKey') || '';
+    if (!apiKey) {
+      showToast('설정 탭에서 Gemini API 키를 먼저 입력해 주세요.'); setIsAnalyzing(false); return;
+    }
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
     const base64Image = base64Data.split(',')[1];
     const mimeType = base64Data.split(';')[0].split(':')[1];
@@ -262,15 +266,29 @@ export default function App() {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{ role: 'user', parts: [
-              { text: '이 승차권 이미지에서 vendorType(ktx/srt/bus), date(YYYY-MM-DD), time(HH:MM), origin, destination을 JSON으로 추출해줘.' },
+              { text: '이 이미지에서 모든 승차권 정보를 추출해줘. 여러 매가 있으면 모두 추출해. vendorType은 ktx/srt/bus 중 하나로, date는 YYYY-MM-DD, time은 HH:MM 형식으로 추출해줘. origin과 destination은 도시 또는 역명으로 추출해줘.' },
               { inlineData: { mimeType, data: base64Image } },
             ]}],
             generationConfig: {
               responseMimeType: 'application/json',
-              responseSchema: { type: 'OBJECT', properties: {
-                vendorType: { type: 'STRING' }, date: { type: 'STRING' }, time: { type: 'STRING' },
-                origin: { type: 'STRING' }, destination: { type: 'STRING' },
-              }},
+              responseSchema: {
+                type: 'OBJECT',
+                properties: {
+                  reservations: {
+                    type: 'ARRAY',
+                    items: {
+                      type: 'OBJECT',
+                      properties: {
+                        vendorType:  { type: 'STRING' },
+                        date:        { type: 'STRING' },
+                        time:        { type: 'STRING' },
+                        origin:      { type: 'STRING' },
+                        destination: { type: 'STRING' },
+                      },
+                    },
+                  },
+                },
+              },
             },
           }),
         });
@@ -281,21 +299,52 @@ export default function App() {
       const result = await response.json();
       const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!text) throw new Error('No text');
-      setPreviewData(JSON.parse(text));
-      showToast('이미지에서 정보를 성공적으로 추출했습니다!');
-    } catch {
-      setPreviewData({ vendorType: 'ktx', date: new Date().toISOString().split('T')[0], time: '14:30', origin: '서울', destination: '부산' });
-      showToast('모의 데이터로 추출되었습니다. (API 키 확인 필요)');
+      const parsed = JSON.parse(text);
+      const list = parsed.reservations ?? (parsed.vendorType ? [parsed] : []);
+      if (!list.length) throw new Error('No reservations found');
+      setPreviewDataList(list);
+      showToast(`${list.length}건의 예매 정보를 추출했습니다!`);
+    } catch (err) {
+      showToast(`인식 실패: ${err.message}. 다시 시도하거나 직접 입력해 주세요.`);
     } finally { setIsAnalyzing(false); }
   };
 
-  const applyPreviewData = () => {
-    if (!previewData) return;
-    setVendorType(previewData.vendorType || 'ktx');
-    setDate(previewData.date || ''); setTime(previewData.time || '');
-    setOrigin(previewData.origin || ''); setDestination(previewData.destination || '');
-    setPreviewData(null); setShowManualForm(true);
-    showToast('폼에 정보가 채워졌습니다. 확인 후 등록해주세요.');
+  const addReservationFromData = (data) => {
+    const vendor = VENDORS.find(v => v.id === (data.vendorType || 'ktx')) ?? VENDORS[0];
+    if (!data.date || !data.time) return false;
+    const resData = {
+      id: Date.now().toString() + Math.random().toString(36).slice(2),
+      vendorType: vendor.id, vendorName: vendor.name,
+      date: data.date, time: data.time,
+      origin: data.origin || '출발지', destination: data.destination || '도착지',
+      price: 0, rules: vendor.rules,
+      alarms: {}, isExpanded: false,
+      status: '예정', cancelInfo: null,
+      createdAt: new Date().toISOString(),
+    };
+    setReservations(p => [resData, ...p]);
+    return true;
+  };
+
+  const applyPreviewItem = (item) => {
+    const ok = addReservationFromData(item);
+    if (ok) {
+      setPreviewDataList(p => p.filter(d => d !== item));
+      showToast('예매가 등록되었습니다.');
+    } else {
+      showToast('날짜와 시간 정보가 없습니다. 직접 수정 후 등록해주세요.');
+      setVendorType(item.vendorType || 'ktx');
+      setDate(item.date || ''); setTime(item.time || '');
+      setOrigin(item.origin || ''); setDestination(item.destination || '');
+      setPreviewDataList([]); setShowManualForm(true);
+    }
+  };
+
+  const applyAllPreviewItems = () => {
+    let count = 0;
+    previewDataList.forEach(item => { if (addReservationFromData(item)) count++; });
+    setPreviewDataList([]);
+    showToast(`${count}건이 모두 등록되었습니다.`);
   };
 
   const now = new Date();
@@ -342,9 +391,10 @@ export default function App() {
               onDeleteRoute={(id) => setSavedRoutes(p => p.filter(r => r.id !== id))}
               onApplyRoute={applyRoute}
               isAnalyzing={isAnalyzing}
-              previewData={previewData} setPreviewData={setPreviewData}
+              previewDataList={previewDataList} setPreviewDataList={setPreviewDataList}
               onImageUpload={handleImageUpload}
-              onApplyPreview={applyPreviewData}
+              onApplyPreviewItem={applyPreviewItem}
+              onApplyAllPreviewItems={applyAllPreviewItems}
               onSubmit={handleAddReservation}
               onCancelEdit={resetForm}
             />
