@@ -151,8 +151,6 @@ function SrtPicker({ origin, destination, onStation, onSave, onReset }) {
 // KTX: 가나다 인덱스 + 필터된 역 목록
 function KtxPicker({ origin, destination, onStation, onSave, onReset }) {
   const [activeIdx, setActiveIdx] = useState('ㄱ');
-  const sectionRefs = useRef({});
-
   const filtered = KTX_ALL.filter(n => getChosung(n) === activeIdx);
 
   return (
