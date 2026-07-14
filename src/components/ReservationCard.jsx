@@ -1,8 +1,9 @@
 import { fmtFee, fmtMoney, getDday, calculateTimeline, getNextTierInfo, getCurrentTier } from '../utils/fees';
-import { ALARM_PRESETS } from '../constants/vendors';
+import { VENDORS, ALARM_PRESETS } from '../constants/vendors';
 
 export default function ReservationCard({ res, now, editingId, customAlarmPresets, onEdit, onDelete, onStatusChange, onToggleExpand, onToggleAlarm }) {
-  const timeline   = calculateTimeline(res.date, res.time, res.rules);
+  const vendor   = VENDORS.find(v => v.id === res.vendorType) ?? VENDORS[0];
+  const timeline = calculateTimeline(res.date, res.time, vendor.rules);
   const isCanceled = res.status === '취소함' || res.status === '놓침';
   const isPast     = res.status === '이용완료' || isCanceled;
   const isScheduled = res.status === '예정';

@@ -125,7 +125,6 @@ export default function App() {
       destination: destination || '도착지',
       arrivalTime: arrivalTime || '',
       price: Number(price) || 0,
-      rules: vendor.rules,
       alarms: base?.alarms ?? {}, isExpanded: false,
       status: base?.status ?? '예정', cancelInfo: base?.cancelInfo ?? null,
       createdAt: base?.createdAt ?? new Date().toISOString(),
@@ -214,7 +213,8 @@ export default function App() {
   const confirmCancel = () => {
     const res = reservations.find(r => r.id === cancelTargetId);
     if (!res) return;
-    const info = calcFeeInfo(res, cancelDate, cancelTime);
+    const vendor = VENDORS.find(v => v.id === res.vendorType);
+    const info = calcFeeInfo({ ...res, rules: vendor?.rules ?? [] }, cancelDate, cancelTime);
     if (!info) return;
     const cancelDT = new Date(`${cancelDate}T${cancelTime}`);
     setReservations(p => p.map(r =>
@@ -338,7 +338,7 @@ export default function App() {
       date: data.date, time: data.time,
       origin: data.origin || '출발지', destination: data.destination || '도착지',
       arrivalTime: data.arrivalTime || '',
-      price: Number(data.price) || 0, rules: vendor.rules,
+      price: Number(data.price) || 0,
       alarms: {}, isExpanded: false,
       status: '예정', cancelInfo: null,
       createdAt: new Date().toISOString(),
@@ -371,10 +371,11 @@ export default function App() {
   const now = new Date();
   const upcomingCount = reservations.filter(r => r.status === '예정').length;
   const cancelRes = reservations.find(r => r.id === cancelTargetId);
-  const cancelPreview = useMemo(
-    () => calcFeeInfo(cancelRes, cancelDate, cancelTime),
-    [cancelTargetId, cancelDate, cancelTime, reservations]
-  );
+  const cancelPreview = useMemo(() => {
+    if (!cancelRes) return null;
+    const vendor = VENDORS.find(v => v.id === cancelRes.vendorType);
+    return calcFeeInfo({ ...cancelRes, rules: vendor?.rules ?? [] }, cancelDate, cancelTime);
+  }, [cancelTargetId, cancelDate, cancelTime, reservations]);
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-20">
