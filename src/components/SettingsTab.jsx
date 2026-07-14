@@ -125,7 +125,7 @@ export default function SettingsTab({ alarmPresets, setAlarmPresets, customAlarm
               <button
                 onClick={() => setAlarmPresets(prev => ({ ...prev, [p.minutes]: !prev[p.minutes] }))}
                 className={`relative w-12 h-6 rounded-full transition-colors ${alarmPresets[p.minutes] ? 'bg-blue-500' : 'bg-gray-200'}`}>
-                <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${alarmPresets[p.minutes] ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                <span style={{ left: alarmPresets[p.minutes] ? '26px' : '2px' }} className="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all" />
               </button>
             </div>
           ))}

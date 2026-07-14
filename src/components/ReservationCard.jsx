@@ -165,18 +165,6 @@ export default function ReservationCard({ res, now, editingId, onEdit, onDelete,
                       <span className={`text-lg font-extrabold ${feeFmt.isFree ? 'text-green-600' : 'text-red-600'}`}>{feeFmt.main}</span>
                       {feeFmt.sub && <span className="text-xs text-gray-400">({feeFmt.sub})</span>}
                     </div>
-                    {!isTimePast && !isPast && hasAlarm && (() => {
-                      const tierAlarms = Object.entries(res.alarms ?? {}).filter(([k]) => k.startsWith(`${tier.id}-`));
-                      if (!tierAlarms.length) return null;
-                      return (
-                        <div className="flex gap-1 flex-wrap mt-1">
-                          {tierAlarms.map(([k, a]) => {
-                            const label = a.alarmMinutes < 60 ? `${a.alarmMinutes}분 전` : a.alarmMinutes < 1440 ? `${a.alarmMinutes/60}시간 전` : '1일 전';
-                            return <span key={k} className="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-600 font-semibold">🔔 {label}</span>;
-                          })}
-                        </div>
-                      );
-                    })()}
                   </div>
                 </div>
               );
