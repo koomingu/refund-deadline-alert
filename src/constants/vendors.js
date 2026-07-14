@@ -1,27 +1,36 @@
+// KTX 일반승차권 환불 위약금
+// 출발 전: 주중(월~목) 무료 / 주말·공휴일(금~일) 요율
+// 출발 후: 역 창구에서만 환불 가능
 export const DEFAULT_KTX_RULES = [
-  { id:1, hoursBefore:720, fee:'무료',  weekendFee:'400원', label:'1개월 ~ 출발 2일 전' },
-  { id:2, hoursBefore:48,  fee:'무료',  weekendFee:'5%',    label:'출발 2일 전 ~ 1일 전' },
-  { id:3, hoursBefore:24,  fee:'5%',    weekendFee:'10%',   label:'출발 1일 전 ~ 3시간 전' },
-  { id:4, hoursBefore:3,   fee:'15%',   weekendFee:'20%',   label:'출발 3시간 전 ~ 출발 전' },
+  { id:1, hoursBefore:720, fee:'무료', weekendFee:'400원', label:'1개월 ~ 출발 2일 전' },
+  { id:2, hoursBefore:48,  fee:'무료', weekendFee:'5%',    label:'출발 2일 전 ~ 1일 전' },
+  { id:3, hoursBefore:24,  fee:'무료', weekendFee:'10%',   label:'출발 1일 전 ~ 3시간 전' },
+  { id:4, hoursBefore:3,   fee:'5%',   weekendFee:'20%',   label:'출발 3시간 전 ~ 출발 전' },
 ];
 
+// SRT도 동일한 요율
 const DEFAULT_SRT_RULES = JSON.parse(JSON.stringify(DEFAULT_KTX_RULES));
 
+// 시외버스 취소 수수료 (명절 별도 적용 — 서비스에서는 주말 요율로 표시)
 const DEFAULT_BUS_RULES = [
-  { id:1, hoursBefore:48, fee:'0%',  weekendFee:'0%',   label:'출발 2일 전' },
+  { id:1, hoursBefore:48, fee:'0%',  weekendFee:'0%',   label:'출발 2일 전 이상' },
   { id:2, hoursBefore:24, fee:'5%',  weekendFee:'7.5%', label:'출발 1일 전 ~ 3시간 전' },
   { id:3, hoursBefore:3,  fee:'10%', weekendFee:'15%',  label:'출발 3시간 전 ~ 출발 전' },
 ];
 
+// KTX/SRT 출발 후 (역 창구 환불)
+// 주중: 15% / 40% / 70%  |  주말: 30% / 40% / 70%
 const KTX_POST_RULES = [
-  { label:'출발 후 20분까지',    fee:'15%', weekendFee:'30%' },
-  { label:'출발 후 20분 ~ 60분', fee:'40%', weekendFee:'40%' },
-  { label:'출발 후 60분 ~ 도착', fee:'70%', weekendFee:'70%' },
+  { label:'출발 후 20분까지',      fee:'15%', weekendFee:'30%' },
+  { label:'출발 후 20분 ~ 60분',   fee:'40%', weekendFee:'40%' },
+  { label:'출발 후 60분 ~ 도착',   fee:'70%', weekendFee:'70%' },
 ];
 
+// 시외버스 출발 후 (요율은 요일 무관 동일)
+// 1시간~4시간: 2025년 50% → 2026년 60% → 2027년 70%
 const BUS_POST_RULES = [
   { label:'출발 후 1시간 이내',    fee:'40%',  weekendFee:'40%' },
-  { label:'출발 후 1시간 ~ 4시간', fee:'60%',  weekendFee:'60%', note:'(2026년 5월~2027년 4월)' },
+  { label:'출발 후 1시간 ~ 4시간', fee:'60%',  weekendFee:'60%' },
   { label:'출발 후 4시간 초과',    fee:'100%', weekendFee:'100%' },
 ];
 
