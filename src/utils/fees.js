@@ -79,13 +79,27 @@ export const calcFeeInfo = (res, cancelDateStr, cancelTimeStr) => {
   const cancelDT = new Date(`${cancelDateStr}T${cancelTimeStr}`);
   const depDT = new Date(`${res.date}T${res.time}`);
   if (isNaN(cancelDT) || isNaN(depDT)) return null;
+  const dow = depDT.getDay();
+  const isWeekend = dow === 0 || dow === 5 || dow === 6;
   const diffH = (depDT - cancelDT) / 3600000;
-  if (diffH < 0) return { appliedFee: '출발 후 (역창구)', appliedLabel: '출발 후 취소', feeAmount: null };
+
+  // 출발 후 취소 — postRules로 계산
+  if (diffH < 0) {
+    const elapsedMin = Math.floor((cancelDT - depDT) / 60000);
+    const postRules = res.postRules ?? [];
+    const sorted = [...postRules].sort((a, b) => a.minutesAfter - b.minutesAfter);
+    const matched = sorted.findLast(r => elapsedMin >= r.minutesAfter) ?? sorted[sorted.length - 1];
+    if (!matched) return { appliedFee: '출발 후 (역창구)', appliedLabel: '출발 후 취소 — 역 창구 문의', feeAmount: null };
+    const appliedFee = isWeekend && matched.weekendFee ? matched.weekendFee : matched.fee;
+    const feeAmount = parseFeeToAmount(appliedFee, res.price);
+    return { appliedFee, appliedLabel: `${matched.label} (역 창구)`, feeAmount, isPostDep: true };
+  }
+
+  // 출발 전 취소
   const sorted = [...res.rules].sort((a, b) => a.hoursBefore - b.hoursBefore);
   let matched = sorted[sorted.length - 1];
   for (const rule of sorted) { if (diffH <= rule.hoursBefore) { matched = rule; break; } }
-  const dow = depDT.getDay();
-  const appliedFee = (dow === 0 || dow === 5 || dow === 6) && matched.weekendFee ? matched.weekendFee : matched.fee;
+  const appliedFee = isWeekend && matched.weekendFee ? matched.weekendFee : matched.fee;
   const feeAmount = parseFeeToAmount(appliedFee, res.price);
   return { appliedFee, appliedLabel: matched.label, feeAmount };
 };

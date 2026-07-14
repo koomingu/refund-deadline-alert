@@ -32,6 +32,9 @@ export default function CancelModal({ cancelRes, cancelDate, setCancelDate, canc
                   {fd.sub && <span className="text-sm text-gray-400">({fd.sub})</span>}
                   <span className="text-xs text-gray-500">— {cancelPreview.appliedLabel}</span>
                 </div>
+                {cancelPreview.isPostDep && (
+                  <p className="text-xs text-purple-700 mt-2 font-semibold">🚉 출발 후 취소는 역 창구에서만 환불 신청 가능합니다.</p>
+                )}
               </div>
             );
           })()}

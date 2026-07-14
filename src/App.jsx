@@ -214,7 +214,7 @@ export default function App() {
     const res = reservations.find(r => r.id === cancelTargetId);
     if (!res) return;
     const vendor = VENDORS.find(v => v.id === res.vendorType);
-    const info = calcFeeInfo({ ...res, rules: vendor?.rules ?? [] }, cancelDate, cancelTime);
+    const info = calcFeeInfo({ ...res, rules: vendor?.rules ?? [], postRules: vendor?.postRules ?? [] }, cancelDate, cancelTime);
     if (!info) return;
     const cancelDT = new Date(`${cancelDate}T${cancelTime}`);
     setReservations(p => p.map(r =>
@@ -374,7 +374,7 @@ export default function App() {
   const cancelPreview = useMemo(() => {
     if (!cancelRes) return null;
     const vendor = VENDORS.find(v => v.id === cancelRes.vendorType);
-    return calcFeeInfo({ ...cancelRes, rules: vendor?.rules ?? [] }, cancelDate, cancelTime);
+    return calcFeeInfo({ ...cancelRes, rules: vendor?.rules ?? [], postRules: vendor?.postRules ?? [] }, cancelDate, cancelTime);
   }, [cancelTargetId, cancelDate, cancelTime, reservations]);
 
   return (

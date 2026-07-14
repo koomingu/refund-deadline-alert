@@ -19,19 +19,20 @@ const DEFAULT_BUS_RULES = [
 ];
 
 // KTX/SRT 출발 후 (역 창구 환불)
-// 주중: 15% / 40% / 70%  |  주말: 30% / 40% / 70%
+// minutesAfter: 이 구간이 시작되는 출발 후 경과 분
+// untilMinutes: 이 구간이 끝나는 분 (null = 도착까지)
 const KTX_POST_RULES = [
-  { label:'출발 후 20분까지',      fee:'15%', weekendFee:'30%' },
-  { label:'출발 후 20분 ~ 60분',   fee:'40%', weekendFee:'40%' },
-  { label:'출발 후 60분 ~ 도착',   fee:'70%', weekendFee:'70%' },
+  { label:'출발 후 20분까지',    minutesAfter:  0, untilMinutes:  20, fee:'15%', weekendFee:'30%' },
+  { label:'출발 후 20~60분',     minutesAfter: 20, untilMinutes:  60, fee:'40%', weekendFee:'40%' },
+  { label:'출발 후 60분 ~ 도착', minutesAfter: 60, untilMinutes: null, fee:'70%', weekendFee:'70%' },
 ];
 
-// 시외버스 출발 후 (요율은 요일 무관 동일)
-// 1시간~4시간: 2025년 50% → 2026년 60% → 2027년 70%
+// 시외버스 출발 후 (요일 무관)
+// 1시간~4시간: 2026년 5월~2027년 4월 = 60%
 const BUS_POST_RULES = [
-  { label:'출발 후 1시간 이내',    fee:'40%',  weekendFee:'40%' },
-  { label:'출발 후 1시간 ~ 4시간', fee:'60%',  weekendFee:'60%' },
-  { label:'출발 후 4시간 초과',    fee:'100%', weekendFee:'100%' },
+  { label:'출발 후 1시간 이내',    minutesAfter:   0, untilMinutes:  60, fee:'40%',  weekendFee:'40%' },
+  { label:'출발 후 1~4시간',       minutesAfter:  60, untilMinutes: 240, fee:'60%',  weekendFee:'60%' },
+  { label:'출발 후 4시간 초과',    minutesAfter: 240, untilMinutes: null, fee:'100%', weekendFee:'100%' },
 ];
 
 export const VENDORS = [
