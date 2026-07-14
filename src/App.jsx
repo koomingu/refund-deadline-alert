@@ -256,7 +256,7 @@ export default function App() {
     if (!apiKey) {
       showToast('설정 탭에서 Gemini API 키를 먼저 입력해 주세요.'); setIsAnalyzing(false); return;
     }
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
     const base64Image = base64Data.split(',')[1];
     const mimeType = base64Data.split(';')[0].split(':')[1];
     try {
