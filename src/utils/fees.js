@@ -83,8 +83,23 @@ export const calcFeeInfo = (res, cancelDateStr, cancelTimeStr) => {
   const isWeekend = dow === 0 || dow === 5 || dow === 6;
   const diffH = (depDT - cancelDT) / 3600000;
 
-  // 출발 후 취소 — postRules로 계산
+  // 출발 후 취소
   if (diffH < 0) {
+    // 도착 시각 이후 → 환불 불가
+    if (res.arrivalTime) {
+      const arrDT = new Date(`${res.date}T${res.arrivalTime}`);
+      if (arrDT <= depDT) arrDT.setDate(arrDT.getDate() + 1); // 다음날 도착
+      if (cancelDT >= arrDT) {
+        return {
+          appliedFee: '환불 불가',
+          appliedLabel: '도착 후 — 결제 금액 전액 손실',
+          feeAmount: res.price || null,
+          isPostDep: true,
+          isNoRefund: true,
+        };
+      }
+    }
+
     const elapsedMin = Math.floor((cancelDT - depDT) / 60000);
     const postRules = res.postRules ?? [];
     const sorted = [...postRules].sort((a, b) => a.minutesAfter - b.minutesAfter);

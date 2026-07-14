@@ -23,16 +23,31 @@ export default function CancelModal({ cancelRes, cancelDate, setCancelDate, canc
             </div>
           </div>
           {cancelPreview && (() => {
-            const fd = fmtFee(cancelPreview.appliedFee, cancelRes.price);
+            const { isNoRefund, isPostDep, appliedLabel, appliedFee } = cancelPreview;
+            if (isNoRefund) {
+              return (
+                <div className="rounded-lg p-4 border bg-gray-900 border-gray-700">
+                  <div className="text-xs font-bold text-gray-400 mb-1">환불 가능 여부</div>
+                  <div className="text-2xl font-extrabold text-white mb-1">환불 불가 🚫</div>
+                  <p className="text-xs text-gray-300">{appliedLabel}</p>
+                  {cancelRes.price > 0 && (
+                    <p className="text-sm font-bold text-red-400 mt-2">
+                      결제 금액 {cancelRes.price.toLocaleString('ko-KR')}원 전액 손실
+                    </p>
+                  )}
+                </div>
+              );
+            }
+            const fd = fmtFee(appliedFee, cancelRes.price);
             return (
               <div className={`rounded-lg p-4 border ${fd.isFree ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
                 <div className="text-xs font-bold text-gray-500 mb-1">예상 취소 수수료</div>
                 <div className="flex items-baseline gap-2 flex-wrap">
                   <span className={`text-2xl font-extrabold ${fd.isFree ? 'text-green-600' : 'text-red-600'}`}>{fd.main}</span>
                   {fd.sub && <span className="text-sm text-gray-400">({fd.sub})</span>}
-                  <span className="text-xs text-gray-500">— {cancelPreview.appliedLabel}</span>
+                  <span className="text-xs text-gray-500">— {appliedLabel}</span>
                 </div>
-                {cancelPreview.isPostDep && (
+                {isPostDep && (
                   <p className="text-xs text-purple-700 mt-2 font-semibold">🚉 출발 후 취소는 역 창구에서만 환불 신청 가능합니다.</p>
                 )}
               </div>
