@@ -295,17 +295,22 @@ export default function App() {
         if (response.ok) break;
         retries--; await new Promise(r => setTimeout(r, delay)); delay *= 2;
       }
-      if (!response?.ok) throw new Error('API failed');
+      if (!response?.ok) {
+        const body = await response.json().catch(() => ({}));
+        const msg = body?.error?.message || `HTTP ${response.status}`;
+        throw new Error(msg);
+      }
       const result = await response.json();
       const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!text) throw new Error('No text');
-      const parsed = JSON.parse(text);
+      if (!text) throw new Error('응답 텍스트 없음');
+      let parsed;
+      try { parsed = JSON.parse(text); } catch { throw new Error('JSON 파싱 실패'); }
       const list = parsed.reservations ?? (parsed.vendorType ? [parsed] : []);
-      if (!list.length) throw new Error('No reservations found');
+      if (!list.length) throw new Error('예매 정보를 찾지 못했습니다');
       setPreviewDataList(list);
       showToast(`${list.length}건의 예매 정보를 추출했습니다!`);
     } catch (err) {
-      showToast(`인식 실패: ${err.message}. 다시 시도하거나 직접 입력해 주세요.`);
+      showToast(`인식 실패: ${err.message}`);
     } finally { setIsAnalyzing(false); }
   };
 
