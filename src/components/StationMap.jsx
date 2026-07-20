@@ -313,7 +313,7 @@ export function StationSelectModal({ vendorType, field, onSelect, onClose }) {
   const vendorLabel = vendorType === 'srt' ? 'SRT' : vendorType === 'ktx' ? 'KTX' : '버스';
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-black/40" onClick={onClose}>
+    <div className="fixed inset-0 z-[9999] flex flex-col bg-black/40" onClick={onClose}>
       <div className="mt-auto bg-white rounded-t-2xl max-h-[85vh] flex flex-col"
            onClick={e => e.stopPropagation()}>
         {/* 헤더 */}

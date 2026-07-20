@@ -5,7 +5,7 @@ const inputCls = "w-full p-2 border border-gray-300 dark:border-slate-600 rounde
 export default function CancelModal({ cancelRes, cancelDate, setCancelDate, cancelTime, setCancelTime, cancelPreview, isAlarmHelped, setIsAlarmHelped, onConfirm, onClose }) {
   if (!cancelRes) return null;
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4">
       <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl max-w-sm w-full overflow-hidden border border-gray-100 dark:border-slate-700">
         <div className="p-5 border-b border-gray-100 dark:border-slate-800">
           <h3 className="text-lg font-bold text-gray-900 dark:text-slate-100 mb-1">예매 취소 처리</h3>
