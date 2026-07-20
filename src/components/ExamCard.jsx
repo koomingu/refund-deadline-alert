@@ -99,14 +99,26 @@ export default function ExamCard({ res, now, editingId, onEdit, onDelete, onStat
           const curFmt  = fmtFee(nextTier.curFee,  res.price);
           const nextFmt = fmtFee(nextTier.nextFee, res.price);
           return (
-            <div className={`mt-3 text-xs font-semibold px-3 py-2 rounded-lg ${
-              nextTier.urgency
-                ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800'
-                : 'bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800'}`}>
-              <span className={`font-extrabold ${curFmt.isFree ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>지금 {curFmt.main}</span>
-              {' · '}
-              <span className="font-extrabold">{nextTier.timeStr} 후</span>{' '}
-              <span className="text-red-700 dark:text-red-400 font-extrabold">{nextFmt.main}</span>으로 변경
+            <div className="mt-3 space-y-1.5">
+              <div className={`px-4 py-2.5 rounded-xl flex items-center justify-between ${
+                curFmt.isFree
+                  ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
+                  : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
+              }`}>
+                <span className="text-xs font-semibold text-gray-500 dark:text-slate-400">지금 취소하면</span>
+                <span className={`text-xl font-extrabold ${curFmt.isFree ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                  {curFmt.main}
+                  {curFmt.sub && <span className="text-sm font-normal ml-1 text-gray-400 dark:text-slate-500">({curFmt.sub})</span>}
+                </span>
+              </div>
+              <div className={`px-3 py-2 rounded-lg text-xs font-semibold flex items-center justify-between ${
+                nextTier.urgency
+                  ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800'
+                  : 'bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
+              }`}>
+                <span>{nextTier.timeStr} 후 변경</span>
+                <span className="font-extrabold">{nextFmt.main}</span>
+              </div>
             </div>
           );
         })()}
