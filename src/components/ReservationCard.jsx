@@ -81,7 +81,7 @@ export default function ReservationCard({ res, now, editingId, onEdit, onDelete,
           )}
         </div>
 
-        {isScheduled && curFeeDisplay && (
+        {isScheduled && curFeeDisplay && !nextTier && (
           <div className={`mt-3 px-4 py-3 rounded-xl flex items-center justify-between ${
             curFeeDisplay.isFree
               ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'

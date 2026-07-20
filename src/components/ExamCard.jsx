@@ -81,7 +81,7 @@ export default function ExamCard({ res, now, editingId, onEdit, onDelete, onStat
           )}
         </div>
 
-        {isScheduled && curFeeFmt && (
+        {isScheduled && curFeeFmt && !nextTier && (
           <div className={`mt-3 px-4 py-3 rounded-xl flex items-center justify-between ${
             curFeeFmt.isFree
               ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
