@@ -31,18 +31,11 @@ export default function ReservationCard({ res, now, editingId, onEdit, onDelete,
     <div className={`bg-white rounded-xl shadow-sm overflow-hidden border transition-all ${isCanceled ? 'opacity-75' : ''} ${isBeingEdited ? 'border-amber-400 ring-2 ring-amber-300' : 'border-gray-200'}`}>
 
       <div className="p-4 pb-3">
-        {/* 1행: 예매처 + 현재 수수료 + 상태/버튼 */}
+        {/* 1행: 예매처 + 상태/버튼 */}
         <div className="flex justify-between items-start mb-2">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-bold text-gray-800">{res.vendorName}</span>
-            {isScheduled && curFeeDisplay && (
-              <span className={`text-xs font-extrabold px-2.5 py-0.5 rounded-full ${curFeeDisplay.isFree ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                지금 취소 시 {curFeeDisplay.main}{curFeeDisplay.sub ? ` (${curFeeDisplay.sub})` : ''}
-              </span>
-            )}
-            {isScheduled && !curTier && (
-              <span className="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-green-100 text-green-700">지금 무료 취소</span>
-            )}
+            {res.title && <span className="text-xs text-gray-400 font-medium">{res.title}</span>}
           </div>
           <div className="flex gap-1.5 items-center shrink-0 ml-2">
             <select value={res.status} onChange={e => onStatusChange(res.id, e.target.value)}
@@ -87,14 +80,29 @@ export default function ReservationCard({ res, now, editingId, onEdit, onDelete,
           )}
         </div>
 
-        {/* 3행: 노쇼 환불 안내 배너 */}
+        {/* 3행: 지금 취소 시 수수료 (크게) */}
+        {isScheduled && (
+          <div className={`mt-3 px-4 py-3 rounded-xl flex items-center justify-between ${
+            curFeeDisplay
+              ? curFeeDisplay.isFree ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
+              : 'bg-green-50 border border-green-200'
+          }`}>
+            <span className="text-xs font-semibold text-gray-500">지금 취소하면</span>
+            <span className={`text-xl font-extrabold ${curFeeDisplay ? curFeeDisplay.isFree ? 'text-green-600' : 'text-red-600' : 'text-green-600'}`}>
+              {curFeeDisplay ? curFeeDisplay.main : '무료'}
+              {curFeeDisplay?.sub && <span className="text-sm font-normal ml-1 text-gray-400">({curFeeDisplay.sub})</span>}
+            </span>
+          </div>
+        )}
+
+        {/* 노쇼 환불 안내 배너 */}
         {isInNoShowWindow && (
           <div className="mt-3 text-xs font-semibold px-3 py-2 rounded-lg bg-purple-50 text-purple-800 border border-purple-200">
             🚉 출발 후 도착({res.arrivalTime}) 전 — <span className="font-extrabold">창구 방문 시 70% 환불 가능</span>
           </div>
         )}
 
-        {/* 4행: 수수료 변경 배너 */}
+        {/* 수수료 변경 배너 */}
         {nextTier && (() => {
           const curFmt  = fmtFee(nextTier.curActualFee,  res.price);
           const nextFmt = fmtFee(nextTier.nextActualFee, res.price);

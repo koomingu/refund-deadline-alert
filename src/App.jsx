@@ -39,7 +39,8 @@ export default function App() {
   const [destination, setDestination]       = useState('');
   const [arrivalTime, setArrivalTime]       = useState('');
   const [price, setPrice]                   = useState('');
-  const [showManualForm, setShowManualForm] = useState(false);
+  const [title, setTitle]                   = useState('');
+  const [showManualForm, setShowManualForm] = useState(true);
 
   // UI 상태
   const [toasts, setToasts]                   = useState([]);
@@ -112,8 +113,8 @@ export default function App() {
     setEditingId(null); setVendorType('ktx');
     setDate(n.toISOString().split('T')[0]);
     setTime(`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`);
-    setOrigin(''); setDestination(''); setArrivalTime(''); setPrice('');
-    setPreviewDataList([]); setShowManualForm(false);
+    setOrigin(''); setDestination(''); setArrivalTime(''); setPrice(''); setTitle('');
+    setPreviewDataList([]); setShowManualForm(true);
   };
 
   // ── 예매 ──
@@ -131,6 +132,7 @@ export default function App() {
       destination: destination || '도착지',
       arrivalTime: arrivalTime || '',
       price: Number(price) || 0,
+      title: title || '',
       alarms: base?.alarms ?? {}, isExpanded: false,
       status: base?.status ?? '예정', cancelInfo: base?.cancelInfo ?? null,
       createdAt: base?.createdAt ?? new Date().toISOString(),
@@ -150,6 +152,7 @@ export default function App() {
     setDestination(res.destination === '도착지' ? '' : res.destination);
     setArrivalTime(res.arrivalTime || '');
     setPrice(res.price ? String(res.price) : '');
+    setTitle(res.title || '');
     setShowManualForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -396,6 +399,10 @@ export default function App() {
 
   const now = new Date();
   const upcomingCount = reservations.filter(r => r.status === '예정').length;
+  const sortedReservations = useMemo(() => {
+    const order = { '예정': 0, '이용완료': 1, '취소함': 2, '놓침': 3 };
+    return [...reservations].sort((a, b) => (order[a.status] ?? 1) - (order[b.status] ?? 1));
+  }, [reservations]);
   const cancelRes = reservations.find(r => r.id === cancelTargetId);
   const cancelPreview = useMemo(() => {
     if (!cancelRes) return null;
@@ -434,6 +441,7 @@ export default function App() {
               destination={destination} setDestination={setDestination}
               arrivalTime={arrivalTime} setArrivalTime={setArrivalTime}
               price={price} setPrice={setPrice}
+              title={title} setTitle={setTitle}
               showManualForm={showManualForm} setShowManualForm={setShowManualForm}
               savedRoutes={savedRoutes}
               onSaveRoute={saveRoute}
@@ -461,7 +469,7 @@ export default function App() {
                 </div>
               )}
 
-              {reservations.map(res => (
+              {sortedReservations.map(res => (
                 <ReservationCard
                   key={res.id}
                   res={res}

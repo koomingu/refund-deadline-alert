@@ -16,6 +16,7 @@ export default function AddForm({
   destination, setDestination,
   arrivalTime, setArrivalTime,
   price, setPrice,
+  title, setTitle,
   showManualForm, setShowManualForm,
   savedRoutes, onSaveRoute, onDeleteRoute, onApplyRoute,
   isAnalyzing, previewDataList, setPreviewDataList,
@@ -107,8 +108,8 @@ export default function AddForm({
       {!editingId && (
         <button
           onClick={() => setShowManualForm(v => !v)}
-          className="w-full flex items-center justify-center gap-1.5 py-3 border-t border-gray-100 text-sm text-gray-400 hover:bg-gray-50 transition-colors">
-          직접 입력할게요 {showManualForm ? '▴' : '▾'}
+          className="w-full flex items-center justify-center gap-1.5 py-3 border-t border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors bg-gray-50/60">
+          ✏️ 직접 입력하기 {showManualForm ? '▴' : '▾'}
         </button>
       )}
 
@@ -206,6 +207,16 @@ export default function AddForm({
                 className="w-full p-2.5 pr-7 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
               <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs">원</span>
             </div>
+          </div>
+
+          {/* 메모 */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">
+              메모 <span className="text-gray-400 font-normal">(선택)</span>
+            </label>
+            <input type="text" value={title} onChange={e => setTitle(e.target.value)}
+              placeholder="예: 친구 생일 여행, 부산 출장"
+              className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
           </div>
 
           <button type="submit"

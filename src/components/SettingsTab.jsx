@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ALARM_PRESETS, VENDORS } from '../constants/vendors';
+import { fireNotification, requestNotifPermission } from '../utils/notifications';
 import StationMap from './StationMap';
 
 export default function SettingsTab({ alarmPresets, setAlarmPresets, customAlarmPresets, setCustomAlarmPresets, savedRoutes, setSavedRoutes, showToast }) {
@@ -148,6 +149,20 @@ export default function SettingsTab({ alarmPresets, setAlarmPresets, customAlarm
               </div>
             );
           })}
+        </div>
+
+        {/* 테스트 알림 */}
+        <div className="mt-4 pt-4 border-t border-gray-100">
+          <button
+            onClick={async () => {
+              const ok = await requestNotifPermission();
+              if (!ok) { showToast('알림 권한이 없습니다. 브라우저 설정에서 허용해 주세요.'); return; }
+              fireNotification('취소 수수료 지킴이 ⏰', '테스트 알림입니다. 알림이 정상적으로 작동하고 있어요!', 'test');
+              showToast('테스트 알림을 전송했습니다.');
+            }}
+            className="w-full py-2.5 border border-blue-300 text-blue-600 font-bold rounded-lg hover:bg-blue-50 text-sm transition-colors">
+            🔔 테스트 알림 보내기
+          </button>
         </div>
 
         {/* 커스텀 추가 */}
