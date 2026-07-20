@@ -59,9 +59,15 @@ export const getNextTierInfo = (timeline, now) => {
   if (!upcoming.length) return null;
   const next = upcoming[0];
   const diffMs = next.triggerTime - now;
-  const h = Math.floor(diffMs / 3600000);
-  const m = Math.floor((diffMs % 3600000) / 60000);
-  const timeStr = h === 0 ? `${m}분` : m === 0 ? `${h}시간` : `${h}시간 ${m}분`;
+  const totalMin = Math.floor(diffMs / 60000);
+  const d = Math.floor(totalMin / 1440);
+  const h = Math.floor((totalMin % 1440) / 60);
+  const m = totalMin % 60;
+  const mo = Math.floor(d / 30);
+  const rd = d % 30;
+  const timeStr = d >= 1
+    ? mo >= 1 ? (rd > 0 ? `${mo}달 ${rd}일` : `${mo}달`) : `${d}일`
+    : h === 0 ? `${m}분` : m === 0 ? `${h}시간` : `${h}시간 ${m}분`;
   const current = [...timeline].filter(t => t.triggerTime <= now).sort((a, b) => b.triggerTime - a.triggerTime)[0];
   const curActualFee = current?.actualFee ?? '무료';
   const nextActualFee = next.actualFee;
@@ -164,10 +170,15 @@ export const getExamNextTierInfo = (timeline, now) => {
 
   const next = upcoming[0];
   const diffMs = next.triggerTime - now;
-  const d = Math.floor(diffMs / 86400000);
-  const h = Math.floor((diffMs % 86400000) / 3600000);
-  const m = Math.floor((diffMs % 3600000) / 60000);
-  const timeStr = d >= 2 ? `${d}일` : h === 0 ? `${m}분` : m === 0 ? `${h}시간` : `${h}시간 ${m}분`;
+  const totalMin = Math.floor(diffMs / 60000);
+  const d = Math.floor(totalMin / 1440);
+  const h = Math.floor((totalMin % 1440) / 60);
+  const m = totalMin % 60;
+  const mo = Math.floor(d / 30);
+  const rd = d % 30;
+  const timeStr = d >= 1
+    ? mo >= 1 ? (rd > 0 ? `${mo}달 ${rd}일` : `${mo}달`) : `${d}일`
+    : h === 0 ? `${m}분` : m === 0 ? `${h}시간` : `${h}시간 ${m}분`;
 
   const past = timeline.filter(t => t.triggerTime && t.triggerTime <= now).sort((a, b) => b.triggerTime - a.triggerTime);
   const curFee = past[0]?.fee ?? '무료';

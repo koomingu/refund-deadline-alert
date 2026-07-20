@@ -167,7 +167,6 @@ export default function ReservationCard({ res, now, editingId, onEdit, onDelete,
                   }`} />
                   <div className={isTimePast ? 'opacity-40' : ''}>
                     <div className="text-xs text-gray-400 dark:text-slate-500 font-medium mb-0.5">{tier.triggerTime.toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}부터</div>
-                    <div className="text-xs text-gray-500 dark:text-slate-400 mb-0.5">{tier.label}</div>
                     <div className="flex items-baseline gap-1.5">
                       <span className={`text-lg font-extrabold ${feeFmt.isFree ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{feeFmt.main}</span>
                       {feeFmt.sub && <span className="text-xs text-gray-400 dark:text-slate-500">({feeFmt.sub})</span>}
