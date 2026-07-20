@@ -87,8 +87,8 @@ export const calcFeeInfo = (res, cancelDateStr, cancelTimeStr) => {
   if (diffH < 0) {
     // 도착 시각 이후 → 환불 불가
     if (res.arrivalTime) {
-      const arrDT = new Date(`${res.date}T${res.arrivalTime}`);
-      if (arrDT <= depDT) arrDT.setDate(arrDT.getDate() + 1); // 다음날 도착
+      let arrDT = new Date(`${res.date}T${res.arrivalTime}`);
+      if (arrDT <= depDT) arrDT = new Date(arrDT.getTime() + 86400000); // 다음날 도착
       if (cancelDT >= arrDT) {
         return {
           appliedFee: '환불 불가',

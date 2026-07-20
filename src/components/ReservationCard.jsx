@@ -10,9 +10,9 @@ export default function ReservationCard({ res, now, editingId, onEdit, onDelete,
   const isBeingEdited = editingId === res.id;
 
   const depDT    = new Date(`${res.date}T${res.time}`);
-  const arrDT    = res.arrivalTime ? new Date(`${res.date}T${res.arrivalTime}`) : null;
+  let arrDT      = res.arrivalTime ? new Date(`${res.date}T${res.arrivalTime}`) : null;
   // 도착이 출발보다 이르면 다음날로 처리 (예: 23:30 출발 → 01:00 도착)
-  if (arrDT && arrDT <= depDT) arrDT?.setDate(arrDT.getDate() + 1);
+  if (arrDT && arrDT <= depDT) arrDT = new Date(arrDT.getTime() + 86400000);
   const isInNoShowWindow = isScheduled && now > depDT && arrDT && now < arrDT;
 
   const dday    = isScheduled ? getDday(res.date, res.time, now) : null;
