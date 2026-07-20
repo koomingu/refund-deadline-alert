@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>취소 수수료 지킴이</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes fadeInDown { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
+    .animate-fade-in-down { animation: fadeInDown 0.3s ease-out forwards; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .animate-spin { animation: spin 1s linear infinite; }
+  </style>
+</head>
+<body class="bg-gray-50">
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback, useMemo } = React;
+
+const Icon = ({ children, size = 16, className = '' }) => (
+  <span style={{ fontSize: size * 0.85, lineHeight: 1 }} className={`inline-flex items-center ${className}`}>{children}</span>
+);
+const Icons = {
+  Trash2:   (p) => <Icon {...p}>🗑️</Icon>,
+  X:        (p) => <Icon {...p}>✕</Icon>,
+  Loader2:  (p) => <span className="animate-spin inline-block" style={{ fontSize: (p.size||16)*0.85 }}>⟳</span>,
+  Pencil:   (p) => <Icon {...p}>✏️</Icon>,
+};
+
+// ── 수수료 규정 데이터 ──
+const DEFAULT_KTX_RULES = [
+  { id:1, hoursBefore:720, fee:'무료',  weekendFee:'400원', label:'1개월 ~ 출발 2일 전' },
+  { id:2, hoursBefore:48,  fee:'무료',  weekendFee:'5%',    label:'출발 2일 전 ~ 1일 전' },
+  { id:3, hoursBefore:24,  fee:'5%',    weekendFee:'10%',   label:'출발 1일 전 ~ 3시간 전' },
+  { id:4, hoursBefore:3,   fee:'15%',   weekendFee:'20%',   label:'출발 3시간 전 ~ 출발 전' },
+];
+const DEFAULT_SRT_RULES = JSON.parse(JSON.stringify(DEFAULT_KTX_RULES));
+const DEFAULT_BUS_RULES = [
+  { id:1, hoursBefore:48, fee:'0%',  weekendFee:'0%',   label:'출발 2일 전' },
+  { id:2, hoursBefore:24, fee:'5%',  weekendFee:'7.5%', label:'출발 1일 전 ~ 3시간 전' },
+  { id:3, hoursBefore:3,  fee:'10%', weekendFee:'15%',  label:'출발 3시간 전 ~ 출발 전' },
+];
+const KTX_POST_RULES = [
+  { label:'출발 후 20분까지',    fee:'15%', weekendFee:'30%' },
+  { label:'출발 후 20분 ~ 60분', fee:'40%', weekendFee:'40%' },
+  { label:'출발 후 60분 ~ 도착', fee:'70%', weekendFee:'70%' },
+];
+const BUS_POST_RULES = [
+  { label:'출발 후 1시간 이내',    fee:'40%',  weekendFee:'40%' },
+  { label:'출발 후 1시간 ~ 4시간', fee:'60%',  weekendFee:'60%', note:'(2026년 5월~2027년 4월)' },
+  { label:'출발 후 4시간 초과',    fee:'100%', weekendFee:'100%' },
+];
+const VENDORS = [
+  { id:'ktx', name:'KTX',          rules:DEFAULT_KTX_RULES, postRules:KTX_POST_RULES },
+  { id:'srt', name:'SRT',          rules:DEFAULT_SRT_RULES, postRules:KTX_POST_RULES },
+  { id:'bus', name:'시외/고속버스', rules:DEFAULT_BUS_RULES, postRules:BUS_POST_RULES },
+];
+
+const ALARM_PRESETS = [
+  { minutes:30,   label:'30분 전' },
+  { minutes:60,   label:'1시간 전' },
+  { minutes:180,  label:'3시간 전' },
+  { minutes:1440, label:'1일 전' },
+];
+
+// ── 헬퍼 ──
+const parseFeeToAmount = (feeStr, price) => {
+  if (!feeStr || feeStr === '무료' || feeStr === '0%') return 0;
+  if (feeStr === '400원') return 400;
+  if (feeStr.endsWith('%') && price) return Math.round(price * parseFloat(feeStr) / 100);
+  return 0;
+};
+const fmtMoney = (n) => n === 0 ? '0원' : n.toLocaleString('ko-KR') + '원';
+
+const fmtFee = (feeStr, price) => {
+  if (!feeStr || feeStr === '무료' || feeStr === '0%') return { main:'무료', sub:null, isFree:true };
+  if (feeStr === '400원') return { main:'400원', sub:null, isFree:false };
+  if (feeStr.endsWith('%')) {
+    if (price) {
+      const amt = parseFeeToAmount(feeStr, price);
+      return { main: fmtMoney(amt), sub: feeStr, isFree:false };
+    }
+    return { main: feeStr, sub:null, isFree:false };
+  }
+  return { main: feeStr, sub:null, isFree:false };
+};
+
+const fmtFullTime = (t) => {
+  if (!t || isNaN(t)) return '오류';
+  const m = t.getMonth()+1, d = t.getDate();
+  const h = String(t.getHours()).padStart(2,'0'), min = String(t.getMinutes()).padStart(2,'0');
+  return `${m}월 ${d}일 ${h}시 ${min}분`;
+};
+
+const getDday = (dateStr, timeStr, now) => {
+  const dep = new Date(`${dateStr}T${timeStr}`);
+  const diffMs = dep - now;
+  if (diffMs <= 0) return null;
+  const diffM = Math.floor(diffMs / 60000);
+  if (diffM < 60) return `${diffM}분 후`;
+  const diffH = Math.floor(diffMs / 3600000);
+  if (diffH < 24) return `${diffH}시간 후`;
+  const diffD = Math.ceil(diffMs / 86400000);
+  return diffD === 1 ? 'D-day' : `D-${diffD - 1}`;
+};
+
+const getNextTierInfo = (timeline, now) => {
+  const upcoming = [...timeline].filter(t => t.triggerTime > now).sort((a,b) => a.triggerTime - b.triggerTime);
+  if (!upcoming.length) return null;
+  const next = upcoming[0];
+  const diffMs = next.triggerTime - now;
+  const h = Math.floor(diffMs / 3600000);
+  const m = Math.floor((diffMs % 3600000) / 60000);
+  const timeStr = h === 0 ? `${m}분` : m === 0 ? `${h}시간` : `${h}시간 ${m}분`;
+  const current = [...timeline].filter(t => t.triggerTime <= now).sort((a,b) => b.triggerTime - a.triggerTime)[0];
+  const curActualFee = current?.actualFee ?? '무료';
+  const nextActualFee = next.actualFee;
+  if (curActualFee === nextActualFee) return null;
+  return { timeStr, nextActualFee, curActualFee, urgency: diffMs < 3*3600000 };
+};
+
+const getCurrentTier = (timeline, now) => {
+  const past = [...timeline].filter(t => t.triggerTime <= now).sort((a,b) => b.triggerTime - a.triggerTime);
+  return past[0] ?? null;
+};
+
+const calcFeeInfo = (res, cancelDateStr, cancelTimeStr) => {
+  if (!cancelDateStr || !cancelTimeStr || !res) return null;
+  const cancelDT = new Date(`${cancelDateStr}T${cancelTimeStr}`);
+  const depDT = new Date(`${res.date}T${res.time}`);
+  if (isNaN(cancelDT) || isNaN(depDT)) return null;
+  const diffH = (depDT - cancelDT) / 3600000;
+  if (diffH < 0) return { appliedFee:'출발 후 (역창구)', appliedLabel:'출발 후 취소', feeAmount:null };
+  const sorted = [...res.rules].sort((a,b) => a.hoursBefore - b.hoursBefore);
+  let matched = sorted[sorted.length - 1];
+  for (const rule of sorted) { if (diffH <= rule.hoursBefore) { matched = rule; break; } }
+  const dow = depDT.getDay();
+  const appliedFee = (dow === 0 || dow === 5 || dow === 6) && matched.weekendFee ? matched.weekendFee : matched.fee;
+  const feeAmount = parseFeeToAmount(appliedFee, res.price);
+  return { appliedFee, appliedLabel: matched.label, feeAmount };
+};
+
+const fireNotification = (title, body, tag) => {
+  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    navigator.serviceWorker.controller.postMessage({ type:'SHOW_NOTIFICATION', title, body, tag });
+  } else if (Notification.permission === 'granted') {
+    new Notification(title, { body, tag });
+  }
+};
+
+// ── 메인 앱 ──
+function App() {
+  const [activeTab, setActiveTab] = useState('reservations');
+  const [reservations, setReservations] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('reservations')) ?? []; } catch { return []; }
+  });
+  const [savedRoutes, setSavedRoutes] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('savedRoutes')) ?? []; } catch { return []; }
+  });
+
+  // 폼 상태
+  const [editingId, setEditingId]     = useState(null);
+  const [vendorType, setVendorType]   = useState('ktx');
+  const [date, setDate]               = useState('');
+  const [time, setTime]               = useState('');
+  const [origin, setOrigin]           = useState('');
+  const [destination, setDestination] = useState('');
+  const [price, setPrice]             = useState('');
+  const [showManualForm, setShowManualForm] = useState(false);
+
+  // UI 상태
+  const [toasts, setToasts]                         = useState([]);
+  const [deleteConfirmId, setDeleteConfirmId]        = useState(null);
+  const [customAlarmPresets, setCustomAlarmPresets]  = useState(() => {
+    try { return JSON.parse(localStorage.getItem('customAlarmPresets')) ?? []; } catch { return []; }
+  });
+  const [newPresetInput, setNewPresetInput]          = useState('');
+
+  // 취소 모달
+  const [cancelModalOpen, setCancelModalOpen]  = useState(false);
+  const [cancelTargetId, setCancelTargetId]    = useState(null);
+  const [cancelDate, setCancelDate]            = useState('');
+  const [cancelTime, setCancelTime]            = useState('');
+  const [isAlarmHelped, setIsAlarmHelped]      = useState(false);
+
+  // 노쇼 모달
+  const [noShowModalOpen, setNoShowModalOpen]  = useState(false);
+  const [noShowTargetId, setNoShowTargetId]    = useState(null);
+
+  // 이미지 분석
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [previewData, setPreviewData] = useState(null);
+  const fileInputRef = useRef(null);
+  const formRef      = useRef(null);
+
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick(t => t + 1), 60000);
+    return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => { localStorage.setItem('reservations',      JSON.stringify(reservations));      }, [reservations]);
+  useEffect(() => { localStorage.setItem('savedRoutes',       JSON.stringify(savedRoutes));       }, [savedRoutes]);
+  useEffect(() => { localStorage.setItem('customAlarmPresets',JSON.stringify(customAlarmPresets));}, [customAlarmPresets]);
+
+  // 알림 체크
+  useEffect(() => {
+    const check = () => {
+      const now = Date.now();
+      setReservations(prev => {
+        let changed = false;
+        const updated = prev.map(res => {
+          if (res.status === '예정') {
+            const dep = new Date(`${res.date}T${res.time}`);
+            if (!isNaN(dep) && now > dep) { changed = true; return { ...res, status:'이용완료' }; }
+          }
+          const newAlarms = { ...res.alarms };
+          let alarmChanged = false;
+          Object.entries(newAlarms).forEach(([key, alarm]) => {
+            if (alarm?.active && alarm.notifyAt <= now) {
+              fireNotification('취소 수수료 지킴이 ⏰',
+                `${res.vendorName} ${res.date} ${res.time} 출발 — 수수료 구간이 곧 바뀝니다!`, key);
+              delete newAlarms[key]; alarmChanged = true; changed = true;
+            }
+          });
+          return alarmChanged ? { ...res, alarms: newAlarms } : res;
+        });
+        return changed ? updated : prev;
+      });
+    };
+    check();
+    const id = setInterval(check, 60000);
+    return () => clearInterval(id);
+  }, []);
+
+  // ── 유틸 ──
+  const showToast = useCallback((message) => {
+    const id = Date.now();
+    setToasts(p => [...p, { id, message }]);
+    setTimeout(() => setToasts(p => p.filter(t => t.id !== id)), 3000);
+  }, []);
+
+  const resetForm = () => {
+    setEditingId(null); setVendorType('ktx');
+    setDate(''); setTime(''); setOrigin(''); setDestination(''); setPrice('');
+    setPreviewData(null); setShowManualForm(false);
+  };
+
+  const handleVendorChange = (v) => setVendorType(v);
+
+  const handleStartEdit = (res) => {
+    setEditingId(res.id); setVendorType(res.vendorType);
+    setDate(res.date); setTime(res.time);
+    setOrigin(res.origin === '출발지' ? '' : res.origin);
+    setDestination(res.destination === '도착지' ? '' : res.destination);
+    setPrice(res.price ? String(res.price) : '');
+    setShowManualForm(true);
+    formRef.current?.scrollIntoView({ behavior:'smooth', block:'start' });
+  };
+
+  const handleAddReservation = (e) => {
+    e.preventDefault();
+    if (!date || !time) { showToast('출발 날짜와 시간을 입력해 주세요.'); return; }
+    if (isNaN(new Date(`${date}T${time}`))) { showToast('시간 형식이 올바르지 않습니다.'); return; }
+    const vendor = VENDORS.find(v => v.id === vendorType);
+    const base = editingId ? reservations.find(r => r.id === editingId) : null;
+    const resData = {
+      id: editingId ?? Date.now().toString(),
+      vendorType, vendorName: vendor.name,
+      date, time,
+      origin: origin || '출발지',
+      destination: destination || '도착지',
+      price: Number(price) || 0,
+      rules: vendor.rules,
+      alarms: base?.alarms ?? {}, isExpanded: false,
+      status: base?.status ?? '예정', cancelInfo: base?.cancelInfo ?? null,
+      createdAt: base?.createdAt ?? new Date().toISOString(),
+    };
+    if (editingId) {
+      setReservations(p => p.map(r => r.id === editingId ? resData : r));
+      showToast('예매 정보가 수정되었습니다.'); resetForm(); return;
+    }
+    setReservations(p => [resData, ...p]);
+    showToast('새로운 예매 내역이 추가되었습니다.'); resetForm();
+  };
+
+  const handleDelete = (id) => {
+    setReservations(p => p.filter(r => r.id !== id));
+    setDeleteConfirmId(null); showToast('예매 내역이 삭제되었습니다.');
+  };
+  const toggleExpand = (id) =>
+    setReservations(p => p.map(r => r.id === id ? { ...r, isExpanded: !r.isExpanded } : r));
+
+  const calculateTimeline = (resDate, resTime, rules) => {
+    const dep = new Date(`${resDate}T${resTime}`);
+    const dow = dep.getDay();
+    const isWeekend = dow === 0 || dow === 5 || dow === 6;
+    const sorted = [...rules].sort((a,b) => b.hoursBefore - a.hoursBefore);
+    return sorted.map((rule, i) => {
+      const triggerTime = new Date(dep.getTime() - rule.hoursBefore * 3600000);
+      const nextRule = sorted[i + 1];
+      const untilTime = nextRule ? new Date(dep.getTime() - nextRule.hoursBefore * 3600000) : dep;
+      const actualFee = isWeekend && rule.weekendFee ? rule.weekendFee : rule.fee;
+      return { ...rule, triggerTime, untilTime, actualFee, formattedUntil: fmtFullTime(untilTime) };
+    });
+  };
+
+  // ── 자주 가는 노선 ──
+  const saveRoute = () => {
+    if (!origin && !destination) { showToast('출발지 또는 도착지를 입력해 주세요.'); return; }
+    const vendor = VENDORS.find(v => v.id === vendorType);
+    const label = `${origin || '?'} → ${destination || '?'}`;
+    if (savedRoutes.find(r => r.vendorType===vendorType && r.origin===origin && r.destination===destination)) {
+      showToast('이미 저장된 노선입니다.'); return;
+    }
+    setSavedRoutes(p => [{ id:`route_${Date.now()}`, vendorType, vendorName: vendor.name, origin: origin||'', destination: destination||'', label }, ...p]);
+    showToast(`'${label}' 노선이 저장됐습니다.`);
+  };
+  const deleteRoute = (id) => setSavedRoutes(p => p.filter(r => r.id !== id));
+  const applyRoute = (route) => { handleVendorChange(route.vendorType); setOrigin(route.origin); setDestination(route.destination); };
+
+  // ── 알림 ──
+  const requestNotifPermission = async () => {
+    if (!('Notification' in window)) { showToast('이 브라우저는 알림을 지원하지 않습니다.'); return false; }
+    if (Notification.permission === 'granted') return true;
+    if (Notification.permission === 'denied') { showToast('알림이 차단되어 있습니다. 브라우저 설정에서 허용해 주세요.'); return false; }
+    return (await Notification.requestPermission()) === 'granted';
+  };
+
+  const toggleAlarmMinutes = async (resId, tier, minutes) => {
+    const key = `${tier.id}-m${minutes}`;
+    const res = reservations.find(r => r.id === resId);
+    const isOn = !!res?.alarms[key];
+    if (isOn) {
+      setReservations(p => p.map(r => { if (r.id !== resId) return r; const next={...r.alarms}; delete next[key]; return { ...r, alarms:next }; }));
+      showToast('알림을 해제했습니다.'); return;
+    }
+    if (!(await requestNotifPermission())) return;
+    const notifyAt = tier.untilTime.getTime() - minutes * 60000;
+    if (notifyAt <= Date.now()) { showToast('이미 지난 시각이라 알림을 설정할 수 없습니다.'); return; }
+    setReservations(p => p.map(r =>
+      r.id === resId ? { ...r, alarms:{ ...r.alarms, [key]:{ active:true, notifyAt, label:tier.label, alarmMinutes:minutes } } } : r
+    ));
+    const t = new Date(notifyAt).toLocaleString('ko-KR', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+    showToast(`알림 설정 — ${t}에 알려드립니다.`);
+  };
+
+  // ── 취소 처리 ──
+  const handleStatusChange = (id, newStatus) => {
+    if (newStatus === '취소함') {
+      const local = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString();
+      setCancelDate(local.split('T')[0]); setCancelTime(local.split('T')[1].slice(0,5));
+      setIsAlarmHelped(false); setCancelTargetId(id); setCancelModalOpen(true); return;
+    }
+    if (newStatus === '놓침') {
+      setNoShowTargetId(id); setNoShowModalOpen(true); return;
+    }
+    setReservations(p => p.map(r => r.id === id ? { ...r, status: newStatus } : r));
+    showToast(`상태가 '${newStatus}'(으)로 변경되었습니다.`);
+  };
+
+  const confirmCancel = () => {
+    const res = reservations.find(r => r.id === cancelTargetId);
+    if (!res) return;
+    const info = calcFeeInfo(res, cancelDate, cancelTime);
+    if (!info) return;
+    const cancelDT = new Date(`${cancelDate}T${cancelTime}`);
+    setReservations(p => p.map(r =>
+      r.id === cancelTargetId ? { ...r, status:'취소함',
+        cancelInfo:{ cancelTime:cancelDT.toISOString(), appliedFee:info.appliedFee, appliedLabel:info.appliedLabel, isAlarmHelped, feeAmount:info.feeAmount ?? 0 }
+      } : r
+    ));
+    setCancelModalOpen(false); showToast('취소 처리가 완료되었습니다.');
+  };
+
+  const confirmNoShow = () => {
+    const res = reservations.find(r => r.id === noShowTargetId);
+    if (!res) return;
+    const vendor = VENDORS.find(v => v.id === res.vendorType);
+    const postRule = vendor?.postRules?.[vendor.postRules.length - 1];
+    const dep = new Date(`${res.date}T${res.time}`);
+    const dow = dep.getDay();
+    const appliedFee = postRule
+      ? ((dow===0||dow===5||dow===6) && postRule.weekendFee ? postRule.weekendFee : postRule.fee)
+      : '규정 확인 필요';
+    const feeAmount = parseFeeToAmount(appliedFee, res.price);
+    setReservations(p => p.map(r =>
+      r.id === noShowTargetId ? { ...r, status:'놓침',
+        cancelInfo:{ cancelTime:dep.toISOString(), appliedFee, appliedLabel:'노쇼(미탑승)', isAlarmHelped:false, feeAmount }
+      } : r
+    ));
+    setNoShowModalOpen(false); setNoShowTargetId(null);
+    showToast('노쇼로 처리되었습니다.');
+  };
+
+  // ── 이미지 분석 ──
+  const handleImageUpload = (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+    setIsAnalyzing(true);
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      try { await processImageWithGemini(ev.target.result); }
+      catch { showToast('이미지 분석 중 오류가 발생했습니다.'); setIsAnalyzing(false); }
+    };
+    reader.readAsDataURL(files[0]);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const processImageWithGemini = async (base64Data) => {
+    const apiKey = '';
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    const base64Image = base64Data.split(',')[1];
+    const mimeType = base64Data.split(';')[0].split(':')[1];
+    try {
+      let response, retries = 5, delay = 1000;
+      while (retries > 0) {
+        response = await fetch(url, {
+          method:'POST', headers:{ 'Content-Type':'application/json' },
+          body: JSON.stringify({
+            contents:[{ role:'user', parts:[
+              { text:'이 승차권 이미지에서 vendorType(ktx/srt/bus), date(YYYY-MM-DD), time(HH:MM), origin, destination을 JSON으로 추출해줘.' },
+              { inlineData:{ mimeType, data:base64Image } },
+            ]}],
+            generationConfig:{ responseMimeType:'application/json',
+              responseSchema:{ type:'OBJECT', properties:{
+                vendorType:{ type:'STRING' }, date:{ type:'STRING' }, time:{ type:'STRING' },
+                origin:{ type:'STRING' }, destination:{ type:'STRING' },
+              }},
+            },
+          }),
+        });
+        if (response.ok) break;
+        retries--; await new Promise(r => setTimeout(r, delay)); delay *= 2;
+      }
+      if (!response?.ok) throw new Error('API failed');
+      const result = await response.json();
+      const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) throw new Error('No text');
+      setPreviewData(JSON.parse(text));
+      showToast('이미지에서 정보를 성공적으로 추출했습니다!');
+    } catch {
+      setPreviewData({ vendorType:'ktx', date:new Date().toISOString().split('T')[0], time:'14:30', origin:'서울', destination:'부산' });
+      showToast('모의 데이터로 추출되었습니다. (API 키 확인 필요)');
+    } finally { setIsAnalyzing(false); }
+  };
+
+  const applyPreviewData = () => {
+    if (!previewData) return;
+    handleVendorChange(previewData.vendorType || 'ktx');
+    setDate(previewData.date || ''); setTime(previewData.time || '');
+    setOrigin(previewData.origin || ''); setDestination(previewData.destination || '');
+    setPreviewData(null); setShowManualForm(true);
+    showToast('폼에 정보가 채워졌습니다. 확인 후 등록해주세요.');
+  };
+
+  const now = new Date();
+  const upcomingCount = reservations.filter(r => r.status === '예정').length;
+  const cancelRes = reservations.find(r => r.id === cancelTargetId);
+  const cancelPreview = useMemo(() => calcFeeInfo(cancelRes, cancelDate, cancelTime), [cancelTargetId, cancelDate, cancelTime, reservations]);
+
+  // ── 렌더 ──
+  return (
+    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-20">
+      {/* 헤더 */}
+      <header className="bg-blue-700 text-white p-4 shadow-md sticky top-0 z-10">
+        <h1 className="text-xl font-extrabold mb-3">취소 수수료 지킴이</h1>
+        <div className="flex bg-blue-900/40 rounded-lg p-1">
+          {[
+            { id:'reservations', label:`내 예매 관리${upcomingCount > 0 ? ` (${upcomingCount})` : ''}` },
+            { id:'rules',        label:'수수료 규정 요약표' },
+            { id:'settings',     label:'설정' },
+          ].map(tab => (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${activeTab===tab.id ? 'bg-white text-blue-800 shadow' : 'text-blue-100 hover:text-white'}`}>
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </header>
+
+      <main className="max-w-xl mx-auto p-4 space-y-5">
+        {activeTab === 'reservations' && (
+          <>
+            {/* ── 예매 등록 폼 ── */}
+            <section ref={formRef} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+
+              {editingId && (
+                <div className="flex items-center justify-between bg-amber-50 border-b border-amber-200 px-4 py-2.5">
+                  <span className="text-sm font-bold text-amber-800">예매 수정 중</span>
+                  <button onClick={resetForm} className="text-amber-700 text-xs font-bold">취소</button>
+                </div>
+              )}
+
+              {/* 캡처로 등록 — 메인 액션 */}
+              {!editingId && (
+                <div className="p-5">
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isAnalyzing}
+                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl py-5 flex flex-col items-center gap-2 transition-colors shadow-sm">
+                    {isAnalyzing
+                      ? <><Icons.Loader2 size={28} /><span className="font-bold text-base">분석 중...</span></>
+                      : <>
+                          <span className="text-3xl">📷</span>
+                          <span className="font-bold text-base">승차권 캡처로 등록하기</span>
+                          <span className="text-blue-200 text-xs">이미지를 업로드하면 예매 정보를 자동으로 채워드려요</span>
+                        </>
+                    }
+                  </button>
+                  <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
+                </div>
+              )}
+
+              {/* 캡처 결과 확인 */}
+              {previewData && (
+                <div className="mx-5 mb-4 p-4 bg-indigo-50 border border-indigo-200 rounded-xl">
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="font-bold text-indigo-800">추출된 정보 확인</span>
+                    <button onClick={() => setPreviewData(null)} className="text-gray-400"><Icons.X size={17} /></button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-sm text-indigo-900 bg-white p-3 rounded-lg mb-3">
+                    <div><span className="text-indigo-400">종류 </span>{previewData.vendorType || '미인식'}</div>
+                    <div><span className="text-indigo-400">날짜 </span>{previewData.date || '미인식'}</div>
+                    <div><span className="text-indigo-400">시간 </span>{previewData.time || '미인식'}</div>
+                    <div><span className="text-indigo-400">여정 </span>{previewData.origin} → {previewData.destination}</div>
+                  </div>
+                  <button onClick={applyPreviewData} className="w-full bg-indigo-600 text-white font-bold py-2.5 rounded-lg hover:bg-indigo-700">
+                    이 정보로 등록하기
+                  </button>
+                </div>
+              )}
+
+              {/* 직접 입력 토글 */}
+              {!editingId && (
+                <button
+                  onClick={() => setShowManualForm(v => !v)}
+                  className="w-full flex items-center justify-center gap-1.5 py-3 border-t border-gray-100 text-sm text-gray-400 hover:bg-gray-50 transition-colors">
+                  직접 입력할게요 {showManualForm ? '▴' : '▾'}
+                </button>
+              )}
+
+              {/* 직접 입력 폼 */}
+              {showManualForm && (
+                <form onSubmit={handleAddReservation} className="p-5 pt-4 border-t border-gray-100 space-y-4">
+                  {/* 교통수단 */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">교통수단</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[{id:'ktx',icon:'🚆',label:'KTX'},{id:'srt',icon:'🚄',label:'SRT'},{id:'bus',icon:'🚌',label:'시외/고속'}].map(t => (
+                        <button key={t.id} type="button" onClick={() => handleVendorChange(t.id)}
+                          className={`py-2.5 text-sm rounded-lg border flex flex-col items-center gap-1 transition-all ${vendorType===t.id ? 'bg-blue-50 border-blue-500 text-blue-700 font-bold ring-1 ring-blue-500' : 'bg-white text-gray-500 hover:bg-gray-50'}`}>
+                          <span>{t.icon}</span><span>{t.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 날짜/시각 */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">출발일</label>
+                      <input type="date" value={date} onChange={e => setDate(e.target.value)}
+                        className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">출발 시각</label>
+                      <input type="time" value={time} onChange={e => setTime(e.target.value)}
+                        className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
+                    </div>
+                  </div>
+
+                  {/* 출발지/도착지 */}
+                  <div>
+                    <div className="flex gap-2 items-center">
+                      <input type="text" value={origin} onChange={e => setOrigin(e.target.value)} placeholder="출발지(선택)"
+                        className="flex-1 p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
+                      <span className="text-gray-400 shrink-0">→</span>
+                      <input type="text" value={destination} onChange={e => setDestination(e.target.value)} placeholder="도착지(선택)"
+                        className="flex-1 p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
+                      <button type="button" onClick={saveRoute} title="자주 가는 노선으로 저장"
+                        className="shrink-0 p-2.5 border border-gray-300 rounded-lg text-gray-400 hover:text-yellow-500 hover:border-yellow-400 transition-colors">
+                        ⭐
+                      </button>
+                    </div>
+                    {savedRoutes.length > 0 && (
+                      <div className="mt-2 flex gap-1.5 flex-wrap">
+                        {savedRoutes.map(route => (
+                          <div key={route.id} className="flex items-center gap-1 bg-blue-50 border border-blue-200 rounded-full px-3 py-1">
+                            <button type="button" onClick={() => applyRoute(route)} className="text-xs font-semibold text-blue-700">
+                              {route.vendorName && <span className="text-blue-400 mr-1">{route.vendorName}</span>}
+                              {route.label}
+                            </button>
+                            <button type="button" onClick={() => deleteRoute(route.id)} className="text-gray-300 hover:text-red-400 ml-1 text-xs">✕</button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 결제 금액 */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">결제 금액 <span className="text-gray-400 font-normal">(선택 — 수수료 금액 계산용)</span></label>
+                    <div className="relative">
+                      <input type="number" value={price} onChange={e => setPrice(e.target.value)} placeholder="0"
+                        className="w-full p-2.5 pr-7 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
+                      <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs">원</span>
+                    </div>
+                  </div>
+
+                  <button type="submit"
+                    className={`w-full text-white font-bold py-3.5 rounded-lg transition-colors shadow-sm ${editingId ? 'bg-amber-500 hover:bg-amber-600' : 'bg-blue-600 hover:bg-blue-700'}`}>
+                    {editingId ? '수정 완료' : '예매 등록'}
+                  </button>
+                </form>
+              )}
+            </section>
+
+            {/* ── 예매 목록 ── */}
+            <section className="space-y-4">
+              <h2 className="text-lg font-bold px-1">등록된 여정 <span className="text-blue-600">({reservations.length})</span></h2>
+
+              {reservations.length === 0 && (
+                <div className="text-center text-gray-400 py-16 bg-white rounded-xl shadow-sm border border-gray-200">
+                  <div className="text-5xl mb-3">📅</div>
+                  <p className="font-semibold text-gray-500">등록된 예매 내역이 없습니다.</p>
+                  <p className="text-sm mt-1">캡처 이미지로 예매를 추가해보세요.</p>
+                </div>
+              )}
+
+              {reservations.map(res => {
+                const timeline    = calculateTimeline(res.date, res.time, res.rules);
+                const isCanceled  = res.status === '취소함' || res.status === '놓침';
+                const isPast      = res.status === '이용완료' || isCanceled;
+                const isScheduled = res.status === '예정';
+                const isBeingEdited = editingId === res.id;
+                const dday    = isScheduled ? getDday(res.date, res.time, now) : null;
+                const nextTier = isScheduled ? getNextTierInfo(timeline, now) : null;
+                const curTier  = isScheduled ? getCurrentTier(timeline, now) : null;
+                const curFeeDisplay = curTier ? fmtFee(curTier.actualFee, res.price) : null;
+
+                let statusColor = 'bg-blue-100 text-blue-800';
+                if (res.status === '이용완료') statusColor = 'bg-green-100 text-green-800';
+                if (res.status === '취소함')   statusColor = 'bg-gray-200 text-gray-700';
+                if (res.status === '놓침')     statusColor = 'bg-red-100 text-red-800';
+
+                return (
+                  <div key={res.id}
+                    className={`bg-white rounded-xl shadow-sm overflow-hidden border transition-all ${isCanceled ? 'opacity-75' : ''} ${isBeingEdited ? 'border-amber-400 ring-2 ring-amber-300' : 'border-gray-200'}`}>
+
+                    <div className="p-4 pb-3">
+                      {/* 1행: 예매처 + 현재 수수료 + 상태/버튼 */}
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-bold text-gray-800">{res.vendorName}</span>
+                          {isScheduled && curFeeDisplay && (
+                            <span className={`text-xs font-extrabold px-2.5 py-0.5 rounded-full ${curFeeDisplay.isFree ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                              지금 취소 시 {curFeeDisplay.main}{curFeeDisplay.sub ? ` (${curFeeDisplay.sub})` : ''}
+                            </span>
+                          )}
+                          {isScheduled && !curTier && (
+                            <span className="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-green-100 text-green-700">지금 무료 취소</span>
+                          )}
+                        </div>
+                        <div className="flex gap-1.5 items-center shrink-0 ml-2">
+                          <select value={res.status} onChange={e => handleStatusChange(res.id, e.target.value)}
+                            className={`text-xs font-bold px-2 py-1 rounded-md border-0 ring-1 ring-inset ring-gray-300 ${statusColor}`}>
+                            <option value="예정">예정</option>
+                            <option value="이용완료">이용완료</option>
+                            <option value="취소함">취소함</option>
+                            <option value="놓침">놓침(노쇼)</option>
+                          </select>
+                          {!isCanceled && (
+                            <button onClick={() => handleStartEdit(res)} className="text-gray-400 hover:text-amber-500"><Icons.Pencil size={16} /></button>
+                          )}
+                          <button onClick={() => setDeleteConfirmId(res.id)} className="text-gray-400 hover:text-red-500"><Icons.Trash2 size={17} /></button>
+                        </div>
+                      </div>
+
+                      {/* 2행: 출발일시 + D-day */}
+                      <div className="flex items-end justify-between">
+                        <div>
+                          <div className="text-2xl font-extrabold text-gray-900 tracking-tight">
+                            {res.date} <span className="text-blue-600 text-xl">{res.time}</span>
+                          </div>
+                          <div className="text-gray-500 text-sm mt-0.5">
+                            {res.origin} → {res.destination}
+                            {res.price > 0 && <span className="ml-2 text-blue-500 font-semibold">{fmtMoney(res.price)}</span>}
+                          </div>
+                        </div>
+                        {dday && (
+                          <span className={`shrink-0 ml-3 text-sm font-extrabold px-3 py-1 rounded-full ${
+                            dday === 'D-day' ? 'bg-red-100 text-red-700' :
+                            dday.includes('분') || dday.includes('시간') ? 'bg-orange-100 text-orange-700' :
+                            'bg-blue-100 text-blue-700'}`}>
+                            {dday}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* 3행: 수수료 변경 배너 */}
+                      {nextTier && (() => {
+                        const curFmt  = fmtFee(nextTier.curActualFee,  res.price);
+                        const nextFmt = fmtFee(nextTier.nextActualFee, res.price);
+                        return (
+                          <div className={`mt-3 text-xs font-semibold px-3 py-2 rounded-lg ${
+                            nextTier.urgency ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-amber-50 text-amber-800 border border-amber-200'}`}>
+                            <span className={`font-extrabold ${curFmt.isFree ? 'text-green-700' : 'text-red-600'}`}>지금 취소 시 {curFmt.main}</span>
+                            {' · '}
+                            <span className="font-extrabold">{nextTier.timeStr} 후</span>{' '}
+                            <span className="text-red-700 font-extrabold">{nextFmt.main}</span>으로 변경
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                    {/* 취소/노쇼 완료 정보 */}
+                    {isCanceled && res.cancelInfo && (
+                      <div className="bg-gray-50 px-4 py-3 border-t border-gray-100">
+                        <div className="text-xs text-gray-500 mb-1">
+                          {res.status === '놓침' ? '🚫 노쇼 처리' : '✅ 취소 완료'}{' '}
+                          ({new Date(res.cancelInfo.cancelTime).toLocaleString('ko-KR', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' })})
+                        </div>
+                        <div className="flex items-baseline gap-2 flex-wrap">
+                          {(() => {
+                            const fd = fmtFee(res.cancelInfo.appliedFee, res.price);
+                            return (
+                              <>
+                                <span className={`text-xl font-extrabold ${fd.isFree ? 'text-green-600' : 'text-red-600'}`}>{fd.main}</span>
+                                {fd.sub && <span className="text-sm text-gray-500">({fd.sub})</span>}
+                                <span className="text-xs text-gray-400">— {res.cancelInfo.appliedLabel}</span>
+                              </>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 지금 취소하기 버튼 */}
+                    {isScheduled && (
+                      <button onClick={() => handleStatusChange(res.id, '취소함')}
+                        className="w-full py-2.5 bg-white border-t border-red-100 text-sm font-bold text-red-500 hover:bg-red-50 transition-colors">
+                        지금 취소하기
+                      </button>
+                    )}
+
+                    {/* 수수료 구간 토글 */}
+                    {!isCanceled && (
+                      <button onClick={() => toggleExpand(res.id)}
+                        className="w-full flex items-center justify-center gap-1 py-2.5 bg-blue-50/50 border-t border-blue-100 text-sm font-bold text-blue-700 hover:bg-blue-50 transition-colors">
+                        구간별 취소 수수료 {res.isExpanded ? '▴' : '▾'}
+                      </button>
+                    )}
+
+                    {/* 타임라인 */}
+                    {res.isExpanded && !isCanceled && (
+                      <div className="p-4 bg-gray-50/80 border-t border-gray-100">
+                        <div className="relative border-l-2 border-blue-200 ml-3 space-y-5">
+                          {timeline.map((tier, index) => {
+                            const isTimePast = tier.untilTime < now;
+                            const feeFmt = fmtFee(tier.actualFee, res.price);
+                            const allPresets = [
+                              ...ALARM_PRESETS,
+                              ...customAlarmPresets.map(m => ({ minutes:m, label: m < 60 ? `${m}분 전` : `${m/60}시간 전` })),
+                            ];
+                            return (
+                              <div key={index} className="relative pl-6">
+                                <div className={`absolute -left-[9px] top-1 w-4 h-4 rounded-full border-2 border-white shadow-sm ${isTimePast ? 'bg-gray-300' : 'bg-blue-500'}`} />
+                                <div className={isTimePast ? 'opacity-40' : ''}>
+                                  <div className="text-xs text-gray-500 font-medium mb-0.5">{tier.formattedUntil}까지</div>
+                                  <div className="flex items-baseline gap-1.5 flex-wrap mb-2">
+                                    <span className="text-xs text-gray-400">취소 수수료</span>
+                                    <span className={`text-lg font-extrabold ${feeFmt.isFree ? 'text-green-600' : 'text-red-600'}`}>{feeFmt.main}</span>
+                                    {feeFmt.sub && <span className="text-xs text-gray-400">({feeFmt.sub})</span>}
+                                  </div>
+                                  {!isTimePast && !isPast && (
+                                    <div className="flex gap-1.5 flex-wrap">
+                                      {allPresets.map(preset => {
+                                        const key = `${tier.id}-m${preset.minutes}`;
+                                        const active = !!res.alarms[key];
+                                        return (
+                                          <button key={preset.minutes} onClick={() => toggleAlarmMinutes(res.id, tier, preset.minutes)}
+                                            className={`text-[11px] px-2 py-1 rounded-full flex items-center gap-1 border font-semibold transition-all ${
+                                              active ? 'bg-blue-100 border-blue-400 text-blue-700' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'}`}>
+                                            {active ? '🔔' : '🔕'} {preset.label}
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </section>
+          </>
+        )}
+
+        {/* ── 설정 탭 ── */}
+        {activeTab === 'settings' && (
+          <section className="space-y-4 mt-4">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+              <h3 className="text-base font-bold text-gray-800 mb-1">알림 프리셋 관리</h3>
+              <p className="text-xs text-gray-400 mb-4">수수료 구간 변경 전 알림을 받을 시간을 직접 추가할 수 있습니다.</p>
+              <div className="flex gap-2 flex-wrap mb-4">
+                {ALARM_PRESETS.map(p => (
+                  <span key={p.minutes} className="text-xs px-3 py-1.5 bg-gray-100 rounded-full text-gray-500 font-semibold">{p.label} (기본)</span>
+                ))}
+                {customAlarmPresets.map(m => (
+                  <div key={m} className="flex items-center gap-1 bg-blue-50 border border-blue-200 rounded-full px-3 py-1">
+                    <span className="text-xs font-semibold text-blue-700">{m < 60 ? `${m}분 전` : `${m/60}시간 전`}</span>
+                    <button onClick={() => setCustomAlarmPresets(p => p.filter(x => x !== m))} className="text-gray-300 hover:text-red-400 text-xs ml-1">✕</button>
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-2 items-center">
+                <input type="number" min="1" placeholder="분 단위 입력 (예: 90)" value={newPresetInput}
+                  onChange={e => setNewPresetInput(e.target.value)}
+                  className="flex-1 p-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+                <span className="text-sm text-gray-400 shrink-0">분 전</span>
+                <button onClick={() => {
+                  const m = parseInt(newPresetInput, 10);
+                  if (!m || m < 1) { showToast('1분 이상 입력해 주세요.'); return; }
+                  if (customAlarmPresets.includes(m) || ALARM_PRESETS.some(p => p.minutes === m)) { showToast('이미 있는 프리셋입니다.'); return; }
+                  setCustomAlarmPresets(p => [...p, m].sort((a,b) => a-b));
+                  setNewPresetInput('');
+                  showToast(`${m}분 전 프리셋이 추가되었습니다.`);
+                }} className="shrink-0 px-4 py-2.5 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 text-sm">추가</button>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* ── 수수료 규정 요약표 ── */}
+        {activeTab === 'rules' && (
+          <section className="space-y-4 mt-4">
+            <div className="bg-blue-50 text-blue-800 p-4 rounded-xl border border-blue-100">
+              <p className="text-sm leading-relaxed font-medium">일반승차권 기준입니다. 명절·단체 승차권은 별도 규정이 적용됩니다. 출발 후 취소는 역 창구에서만 가능합니다.</p>
+            </div>
+            {VENDORS.map(vendor => (
+              <div key={vendor.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                  <h3 className="font-bold text-gray-900">{vendor.id === 'bus' ? '🚌' : '🚆'} {vendor.name} 취소 수수료</h3>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left text-gray-600">
+                    <thead className="text-xs text-gray-700 bg-gray-100 border-b border-gray-200">
+                      <tr>
+                        <th className="px-4 py-2.5 font-semibold">구분</th>
+                        <th className="px-4 py-2.5 font-semibold">평일 (월~목)</th>
+                        <th className="px-4 py-2.5 font-semibold">주말·공휴일</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {[...vendor.rules].sort((a,b) => b.hoursBefore - a.hoursBefore).map((rule,i) => (
+                        <tr key={i} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 font-medium text-gray-900 bg-gray-50/50">{rule.label}</td>
+                          <td className={`px-4 py-3 font-bold ${rule.fee==='무료'||rule.fee==='0%' ? 'text-blue-600' : 'text-gray-700'}`}>{rule.fee}</td>
+                          <td className={`px-4 py-3 font-bold ${!rule.weekendFee||rule.weekendFee==='무료'||rule.weekendFee==='0%' ? 'text-blue-600' : 'text-red-500'}`}>{rule.weekendFee||rule.fee}</td>
+                        </tr>
+                      ))}
+                      {vendor.postRules && <tr><td colSpan={3} className="px-4 py-1.5 text-[11px] font-bold text-red-600 bg-red-50 border-t border-red-100">출발 후 (역 창구 환불)</td></tr>}
+                      {vendor.postRules?.map((rule,i) => (
+                        <tr key={`post-${i}`} className="bg-red-50/30">
+                          <td className="px-4 py-2.5 font-medium text-gray-700 text-xs">{rule.label}{rule.note && <div className="text-[10px] text-gray-400">{rule.note}</div>}</td>
+                          <td className="px-4 py-2.5 font-bold text-red-500 text-xs">{rule.fee}</td>
+                          <td className="px-4 py-2.5 font-bold text-red-500 text-xs">{rule.weekendFee}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="px-4 py-2 bg-gray-50 border-t border-gray-100 text-[11px] text-gray-500">
+                  {vendor.id === 'bus' ? '* 수수료 100원 미만 절사 · 명절(설·추석 전일·당일·다음날) 별도 요율' : '* 최저위약금 400원 · 주말: 금~일, 공휴일, 명절 포함'}
+                </div>
+              </div>
+            ))}
+          </section>
+        )}
+      </main>
+
+      {/* ── 취소 처리 모달 ── */}
+      {cancelModalOpen && cancelRes && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full overflow-hidden">
+            <div className="p-5 border-b border-gray-100">
+              <h3 className="text-lg font-bold text-gray-900 mb-1">예매 취소 처리</h3>
+              <p className="text-xs text-gray-400">{cancelRes.vendorName} {cancelRes.date} {cancelRes.time} 출발</p>
+            </div>
+            <div className="p-4 space-y-4">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">취소 날짜</label>
+                  <input type="date" value={cancelDate} onChange={e => setCancelDate(e.target.value)}
+                    className="w-full p-2 border rounded text-sm outline-none focus:ring-1 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">취소 시각</label>
+                  <input type="time" value={cancelTime} onChange={e => setCancelTime(e.target.value)}
+                    className="w-full p-2 border rounded text-sm outline-none focus:ring-1 focus:ring-blue-500" />
+                </div>
+              </div>
+              {cancelPreview && (
+                <div className={`rounded-lg p-4 border ${cancelPreview.appliedFee==='무료'||cancelPreview.appliedFee==='0%' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+                  <div className="text-xs font-bold text-gray-500 mb-1">예상 취소 수수료</div>
+                  {(() => {
+                    const fd = fmtFee(cancelPreview.appliedFee, cancelRes.price);
+                    return (
+                      <div className="flex items-baseline gap-2 flex-wrap">
+                        <span className={`text-2xl font-extrabold ${fd.isFree ? 'text-green-600' : 'text-red-600'}`}>{fd.main}</span>
+                        {fd.sub && <span className="text-sm text-gray-400">({fd.sub})</span>}
+                        <span className="text-xs text-gray-500">— {cancelPreview.appliedLabel}</span>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+              <label className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-100 rounded-lg cursor-pointer">
+                <input type="checkbox" checked={isAlarmHelped} onChange={e => setIsAlarmHelped(e.target.checked)} className="w-4 h-4 text-blue-600 rounded" />
+                <span className="text-sm font-semibold text-blue-900">알림 덕분에 제때 취소했어요</span>
+              </label>
+            </div>
+            <div className="flex bg-gray-50 p-3 gap-2">
+              <button onClick={() => setCancelModalOpen(false)} className="flex-1 py-2 bg-white border border-gray-300 text-gray-700 font-bold rounded-lg hover:bg-gray-50">돌아가기</button>
+              <button onClick={confirmCancel} className="flex-1 py-2 bg-red-500 text-white font-bold rounded-lg hover:bg-red-600">취소 완료 기록</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── 노쇼 처리 모달 ── */}
+      {noShowModalOpen && (() => {
+        const res = reservations.find(r => r.id === noShowTargetId);
+        const vendor = res ? VENDORS.find(v => v.id === res.vendorType) : null;
+        return (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-xl shadow-xl max-w-sm w-full overflow-hidden">
+              <div className="p-5 border-b border-gray-100 text-center">
+                <div className="text-3xl mb-2">🚫</div>
+                <h3 className="text-lg font-bold text-gray-900 mb-1">노쇼(미탑승) 처리</h3>
+                {res && <p className="text-xs text-gray-400">{res.vendorName} {res.date} {res.time} 출발</p>}
+              </div>
+              <div className="p-4 space-y-3">
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <div className="text-xs font-bold text-red-700 mb-2">노쇼 수수료 안내</div>
+                  <p className="text-xs text-gray-600 mb-3">탑승하지 않은 경우 출발 후 취소로 간주됩니다. 통상 최고 수수료가 적용됩니다.</p>
+                  {vendor?.postRules && (
+                    <table className="w-full text-xs">
+                      <thead><tr className="text-gray-400"><th className="text-left py-1">시점</th><th className="text-right py-1">평일</th><th className="text-right py-1">주말</th></tr></thead>
+                      <tbody className="divide-y divide-red-100">
+                        {vendor.postRules.map((r,i) => (
+                          <tr key={i}><td className="py-1 text-gray-600">{r.label}</td><td className="py-1 text-right text-red-600 font-bold">{r.fee}</td><td className="py-1 text-right text-red-600 font-bold">{r.weekendFee}</td></tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              </div>
+              <div className="flex bg-gray-50 p-3 gap-2">
+                <button onClick={() => { setNoShowModalOpen(false); setNoShowTargetId(null); }} className="flex-1 py-2 bg-white border border-gray-300 text-gray-700 font-bold rounded-lg hover:bg-gray-50">돌아가기</button>
+                <button onClick={confirmNoShow} className="flex-1 py-2 bg-red-500 text-white font-bold rounded-lg hover:bg-red-600">노쇼로 기록</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── 삭제 확인 모달 ── */}
+      {deleteConfirmId && (() => {
+        const target = reservations.find(r => r.id === deleteConfirmId);
+        return (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-xl shadow-xl max-w-sm w-full overflow-hidden">
+              <div className="p-5 border-b border-gray-100 text-center">
+                <div className="text-4xl mb-3">🗑️</div>
+                <h3 className="text-lg font-bold text-gray-900 mb-1">예매 내역을 삭제할까요?</h3>
+                {target && (
+                  <p className="text-sm text-gray-500">
+                    <span className="font-semibold text-gray-700">{target.vendorName}</span> {target.date} {target.time}<br />
+                    <span className="text-gray-400">{target.origin} → {target.destination}</span>
+                  </p>
+                )}
+                <p className="text-xs text-red-500 mt-2 font-medium">삭제 후 복구할 수 없습니다.</p>
+              </div>
+              <div className="flex p-3 gap-2 bg-gray-50">
+                <button onClick={() => setDeleteConfirmId(null)} className="flex-1 py-2.5 bg-white border border-gray-300 text-gray-700 font-bold rounded-lg hover:bg-gray-50">취소</button>
+                <button onClick={() => handleDelete(deleteConfirmId)} className="flex-1 py-2.5 bg-red-500 text-white font-bold rounded-lg hover:bg-red-600">삭제</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── 토스트 ── */}
+      <div className="fixed top-4 right-4 flex flex-col gap-2 w-72 z-[100] pointer-events-none">
+        {toasts.map(t => (
+          <div key={t.id} className="bg-gray-800/95 text-white text-sm font-semibold px-4 py-3 rounded-lg shadow-xl animate-fade-in-down pointer-events-auto border border-gray-700">
+            {t.message}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+</script>
+</body>
+</html>

@@ -464,6 +464,17 @@ export default function App() {
     showToast(`${count}건이 모두 등록되었습니다.`);
   };
 
+  // 다크모드
+  const [darkMode, setDarkMode] = useState(() => {
+    const stored = localStorage.getItem('darkMode');
+    if (stored !== null) return stored === 'true';
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', darkMode);
+    localStorage.setItem('darkMode', darkMode);
+  }, [darkMode]);
+
   const now = new Date();
   const upcomingCount = reservations.filter(r => r.status === '예정').length;
   const sortedReservations = useMemo(() => {
@@ -481,141 +492,180 @@ export default function App() {
     return calcFeeInfo({ ...cancelRes, rules: vendor?.rules ?? [], postRules: vendor?.postRules ?? [] }, cancelDate, cancelTime);
   }, [cancelTargetId, cancelDate, cancelTime, reservations]);
 
-  return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-20">
-      {/* 헤더 */}
-      <header className="bg-blue-700 text-white p-4 shadow-md sticky top-0 z-10">
-        <h1 className="text-xl font-extrabold mb-3">취소 수수료 지킴이</h1>
-        <div className="flex bg-blue-900/40 rounded-lg p-1">
+  const TABS = [
+    { id: 'reservations', label: '내 예매 관리', badge: upcomingCount > 0 ? upcomingCount : null },
+    { id: 'rules',        label: '수수료 규정 요약표' },
+    { id: 'settings',     label: '설정' },
+  ];
+
+  const FormPanel = (
+    <div className="space-y-4 lg:sticky lg:top-6">
+      {!editingId && (
+        <div className="flex bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-1">
           {[
-            { id: 'reservations', label: `내 예매 관리${upcomingCount > 0 ? ` (${upcomingCount})` : ''}` },
-            { id: 'rules',        label: '수수료 규정 요약표' },
-            { id: 'settings',     label: '설정' },
-          ].map(tab => (
+            { id: 'transport', label: '🚆 교통수단' },
+            { id: 'exam',      label: '📝 시험' },
+          ].map(d => (
+            <button key={d.id} onClick={() => setDomain(d.id)}
+              className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${domain === d.id ? 'bg-blue-600 text-white shadow' : 'text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800'}`}>
+              {d.label}
+            </button>
+          ))}
+        </div>
+      )}
+      {domain === 'exam' ? (
+        <ExamAddForm
+          editingId={editingId}
+          examType={examType} setExamType={setExamType}
+          date={date} setDate={setDate}
+          time={time} setTime={setTime}
+          registrationDeadline={registrationDeadline} setRegistrationDeadline={setRegistrationDeadline}
+          examLocation={examLocation} setExamLocation={setExamLocation}
+          price={price} setPrice={setPrice}
+          title={title} setTitle={setTitle}
+          onSubmit={handleAddReservation}
+          onCancelEdit={resetForm}
+        />
+      ) : (
+        <AddForm
+          editingId={editingId}
+          vendorType={vendorType} setVendorType={setVendorType}
+          date={date} setDate={setDate}
+          time={time} setTime={setTime}
+          origin={origin} setOrigin={setOrigin}
+          destination={destination} setDestination={setDestination}
+          arrivalTime={arrivalTime} setArrivalTime={setArrivalTime}
+          price={price} setPrice={setPrice}
+          title={title} setTitle={setTitle}
+          showManualForm={showManualForm} setShowManualForm={setShowManualForm}
+          savedRoutes={savedRoutes}
+          onSaveRoute={saveRoute}
+          onDeleteRoute={(id) => setSavedRoutes(p => p.filter(r => r.id !== id))}
+          onApplyRoute={applyRoute}
+          isAnalyzing={isAnalyzing}
+          previewDataList={previewDataList} setPreviewDataList={setPreviewDataList}
+          onImageUpload={handleImageUpload}
+          onApplyPreviewItem={applyPreviewItem}
+          onApplyAllPreviewItems={applyAllPreviewItems}
+          onSubmit={handleAddReservation}
+          onCancelEdit={resetForm}
+        />
+      )}
+    </div>
+  );
+
+  const CardListPanel = (
+    <section className="space-y-4">
+      <h2 className="text-base font-bold px-1 text-gray-700 dark:text-slate-300">
+        등록된 여정 <span className="text-blue-600 dark:text-blue-400">({reservations.length})</span>
+      </h2>
+      {reservations.length === 0 && (
+        <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700">
+          <div className="text-5xl mb-3">📅</div>
+          <p className="font-semibold text-gray-500 dark:text-slate-400">등록된 예매 내역이 없습니다.</p>
+          <p className="text-sm mt-1 text-gray-400 dark:text-slate-500">캡처 이미지로 예매를 추가해보세요.</p>
+        </div>
+      )}
+      {sortedReservations.map(res =>
+        res.domain === 'exam' ? (
+          <ExamCard key={res.id} res={res} now={now} editingId={editingId}
+            onEdit={handleStartEdit} onDelete={(id) => setDeleteConfirmId(id)}
+            onStatusChange={handleStatusChange} onToggleExpand={toggleExpand} onToggleAlarm={toggleCardAlarm} />
+        ) : (
+          <ReservationCard key={res.id} res={res} now={now} editingId={editingId}
+            onEdit={handleStartEdit} onDelete={(id) => setDeleteConfirmId(id)}
+            onStatusChange={handleStatusChange} onToggleExpand={toggleExpand} onToggleAlarm={toggleCardAlarm} />
+        )
+      )}
+    </section>
+  );
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-slate-100 font-sans lg:flex">
+
+      {/* ── 사이드바 (lg+) ── */}
+      <aside className="hidden lg:flex lg:flex-col lg:w-56 lg:fixed lg:inset-y-0 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-700 z-20">
+        <div className="px-5 py-6 border-b border-gray-100 dark:border-slate-800">
+          <div className="text-xs font-bold text-blue-600 dark:text-blue-400 tracking-widest uppercase mb-0.5">취소 수수료</div>
+          <h1 className="text-base font-extrabold text-gray-900 dark:text-white leading-tight">지킴이</h1>
+        </div>
+        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+          {TABS.map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${activeTab === tab.id ? 'bg-white text-blue-800 shadow' : 'text-blue-100 hover:text-white'}`}>
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-semibold transition-all text-left ${
+                activeTab === tab.id
+                  ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                  : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800'
+              }`}>
+              <span>{tab.label}</span>
+              {tab.badge && (
+                <span className="bg-blue-600 text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">{tab.badge}</span>
+              )}
+            </button>
+          ))}
+        </nav>
+        <div className="px-4 py-4 border-t border-gray-100 dark:border-slate-800">
+          <button onClick={() => setDarkMode(d => !d)}
+            className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 transition-all font-medium">
+            <span>{darkMode ? '라이트 모드' : '다크 모드'}</span>
+            <span className="text-base">{darkMode ? '☀️' : '🌙'}</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* ── 모바일 헤더 ── */}
+      <header className="lg:hidden bg-blue-700 dark:bg-slate-900 dark:border-b dark:border-slate-700 text-white p-4 shadow-md sticky top-0 z-10">
+        <div className="flex items-center justify-between mb-3">
+          <h1 className="text-lg font-extrabold">취소 수수료 지킴이</h1>
+          <button onClick={() => setDarkMode(d => !d)}
+            className="text-blue-200 dark:text-slate-400 hover:text-white text-xl p-1 rounded">
+            {darkMode ? '☀️' : '🌙'}
+          </button>
+        </div>
+        <div className="flex bg-blue-900/40 dark:bg-slate-800/60 rounded-lg p-1">
+          {TABS.map(tab => (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 py-2 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1 ${
+                activeTab === tab.id ? 'bg-white dark:bg-slate-700 text-blue-800 dark:text-white shadow' : 'text-blue-100 hover:text-white'
+              }`}>
               {tab.label}
+              {tab.badge && <span className="bg-blue-500 text-white text-[10px] font-bold px-1 rounded-full">{tab.badge}</span>}
             </button>
           ))}
         </div>
       </header>
 
-      <main className="max-w-xl mx-auto p-4 space-y-5">
-        {activeTab === 'reservations' && (
-          <>
-            {/* 도메인 선택 탭 */}
-            {!editingId && (
-              <div className="flex bg-white rounded-xl shadow-sm border border-gray-200 p-1">
-                {[
-                  { id: 'transport', label: '🚆 교통수단' },
-                  { id: 'exam',      label: '📝 시험' },
-                ].map(d => (
-                  <button
-                    key={d.id}
-                    onClick={() => setDomain(d.id)}
-                    className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${domain === d.id ? 'bg-blue-600 text-white shadow' : 'text-gray-500 hover:bg-gray-50'}`}>
-                    {d.label}
-                  </button>
-                ))}
-              </div>
-            )}
+      {/* ── 메인 콘텐츠 ── */}
+      <main className="lg:pl-56 flex-1 min-h-screen pb-20">
+        <div className="p-4 lg:p-6">
 
-            {domain === 'exam' ? (
-              <ExamAddForm
-                editingId={editingId}
-                examType={examType} setExamType={setExamType}
-                date={date} setDate={setDate}
-                time={time} setTime={setTime}
-                registrationDeadline={registrationDeadline} setRegistrationDeadline={setRegistrationDeadline}
-                examLocation={examLocation} setExamLocation={setExamLocation}
-                price={price} setPrice={setPrice}
-                title={title} setTitle={setTitle}
-                onSubmit={handleAddReservation}
-                onCancelEdit={resetForm}
+          {activeTab === 'reservations' && (
+            <div className="lg:grid lg:grid-cols-[400px_1fr] lg:gap-6 lg:items-start space-y-5 lg:space-y-0">
+              {FormPanel}
+              {CardListPanel}
+            </div>
+          )}
+
+          {activeTab === 'rules' && (
+            <div className="lg:max-w-2xl">
+              <RulesTab />
+            </div>
+          )}
+
+          {activeTab === 'settings' && (
+            <div className="lg:max-w-2xl">
+              <SettingsTab
+                alarmPresets={alarmPresets}
+                setAlarmPresets={setAlarmPresets}
+                customAlarmPresets={customAlarmPresets}
+                setCustomAlarmPresets={setCustomAlarmPresets}
+                savedRoutes={savedRoutes}
+                setSavedRoutes={setSavedRoutes}
+                showToast={showToast}
               />
-            ) : (
-            <AddForm
-              editingId={editingId}
-              vendorType={vendorType} setVendorType={setVendorType}
-              date={date} setDate={setDate}
-              time={time} setTime={setTime}
-              origin={origin} setOrigin={setOrigin}
-              destination={destination} setDestination={setDestination}
-              arrivalTime={arrivalTime} setArrivalTime={setArrivalTime}
-              price={price} setPrice={setPrice}
-              title={title} setTitle={setTitle}
-              showManualForm={showManualForm} setShowManualForm={setShowManualForm}
-              savedRoutes={savedRoutes}
-              onSaveRoute={saveRoute}
-              onDeleteRoute={(id) => setSavedRoutes(p => p.filter(r => r.id !== id))}
-              onApplyRoute={applyRoute}
-              isAnalyzing={isAnalyzing}
-              previewDataList={previewDataList} setPreviewDataList={setPreviewDataList}
-              onImageUpload={handleImageUpload}
-              onApplyPreviewItem={applyPreviewItem}
-              onApplyAllPreviewItems={applyAllPreviewItems}
-              onSubmit={handleAddReservation}
-              onCancelEdit={resetForm}
-            />
-            )}
-
-            <section className="space-y-4">
-              <h2 className="text-lg font-bold px-1">
-                등록된 여정 <span className="text-blue-600">({reservations.length})</span>
-              </h2>
-
-              {reservations.length === 0 && (
-                <div className="text-center text-gray-400 py-16 bg-white rounded-xl shadow-sm border border-gray-200">
-                  <div className="text-5xl mb-3">📅</div>
-                  <p className="font-semibold text-gray-500">등록된 예매 내역이 없습니다.</p>
-                  <p className="text-sm mt-1">캡처 이미지로 예매를 추가해보세요.</p>
-                </div>
-              )}
-
-              {sortedReservations.map(res =>
-                res.domain === 'exam' ? (
-                  <ExamCard
-                    key={res.id}
-                    res={res}
-                    now={now}
-                    editingId={editingId}
-                    onEdit={handleStartEdit}
-                    onDelete={(id) => setDeleteConfirmId(id)}
-                    onStatusChange={handleStatusChange}
-                    onToggleExpand={toggleExpand}
-                    onToggleAlarm={toggleCardAlarm}
-                  />
-                ) : (
-                  <ReservationCard
-                    key={res.id}
-                    res={res}
-                    now={now}
-                    editingId={editingId}
-                    onEdit={handleStartEdit}
-                    onDelete={(id) => setDeleteConfirmId(id)}
-                    onStatusChange={handleStatusChange}
-                    onToggleExpand={toggleExpand}
-                    onToggleAlarm={toggleCardAlarm}
-                  />
-                )
-              )}
-            </section>
-          </>
-        )}
-
-        {activeTab === 'rules' && <RulesTab />}
-
-        {activeTab === 'settings' && (
-          <SettingsTab
-            alarmPresets={alarmPresets}
-            setAlarmPresets={setAlarmPresets}
-            customAlarmPresets={customAlarmPresets}
-            setCustomAlarmPresets={setCustomAlarmPresets}
-            savedRoutes={savedRoutes}
-            setSavedRoutes={setSavedRoutes}
-            showToast={showToast}
-          />
-        )}
+            </div>
+          )}
+        </div>
       </main>
 
       {/* 모달 */}

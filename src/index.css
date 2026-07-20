@@ -9,3 +9,10 @@
 .animate-fade-in-down {
   animation: fadeInDown 0.3s ease-out forwards;
 }
+
+/* 다크모드에서 날짜/시간 입력 칸을 시스템 다크 스타일로 */
+.dark input[type="date"],
+.dark input[type="time"],
+.dark input[type="datetime-local"] {
+  color-scheme: dark;
+}
