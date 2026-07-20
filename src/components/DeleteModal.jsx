@@ -1,3 +1,5 @@
+import { createPortal } from 'react-dom';
+
 export default function DeleteModal({ target, onConfirm, onClose }) {
   if (!target) return null;
   const name = target.domain === 'exam' ? target.examName : target.vendorName;
@@ -5,7 +7,7 @@ export default function DeleteModal({ target, onConfirm, onClose }) {
     ? `${target.date} ${target.time} ${target.examLocation || ''}`
     : `${target.date} ${target.time} · ${target.origin} → ${target.destination}`;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4">
       <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl max-w-sm w-full overflow-hidden border border-gray-100 dark:border-slate-700">
         <div className="p-5 border-b border-gray-100 dark:border-slate-800 text-center">
@@ -22,6 +24,7 @@ export default function DeleteModal({ target, onConfirm, onClose }) {
           <button onClick={onConfirm} className="flex-1 py-2.5 bg-red-500 text-white font-bold rounded-lg hover:bg-red-600">삭제</button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

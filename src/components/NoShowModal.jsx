@@ -1,9 +1,10 @@
+import { createPortal } from 'react-dom';
 import { VENDORS } from '../constants/vendors';
 
 export default function NoShowModal({ res, onConfirm, onClose }) {
   if (!res) return null;
   const vendor = VENDORS.find(v => v.id === res.vendorType);
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4">
       <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl max-w-sm w-full overflow-hidden border border-gray-100 dark:border-slate-700">
         <div className="p-5 border-b border-gray-100 dark:border-slate-800 text-center">
@@ -42,6 +43,7 @@ export default function NoShowModal({ res, onConfirm, onClose }) {
           <button onClick={onConfirm} className="flex-1 py-2 bg-red-500 text-white font-bold rounded-lg hover:bg-red-600">노쇼로 기록</button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

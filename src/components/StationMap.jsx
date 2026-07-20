@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { BUS_CITIES } from '../constants/stations';
 
 const SRT_MAIN = [
@@ -312,23 +313,24 @@ export function StationSelectModal({ vendorType, field, onSelect, onClose }) {
   const label = field === 'origin' ? '출발역 선택' : '도착역 선택';
   const vendorLabel = vendorType === 'srt' ? 'SRT' : vendorType === 'ktx' ? 'KTX' : '버스';
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[9999] flex flex-col bg-black/40" onClick={onClose}>
-      <div className="mt-auto bg-white rounded-t-2xl max-h-[85vh] flex flex-col"
+      <div className="mt-auto bg-white dark:bg-slate-900 rounded-t-2xl max-h-[85vh] flex flex-col"
            onClick={e => e.stopPropagation()}>
         {/* 헤더 */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-slate-700 shrink-0">
           <div>
-            <h2 className="text-base font-bold text-gray-900">{label}</h2>
-            <p className="text-xs text-gray-400">{vendorLabel}</p>
+            <h2 className="text-base font-bold text-gray-900 dark:text-slate-100">{label}</h2>
+            <p className="text-xs text-gray-400 dark:text-slate-500">{vendorLabel}</p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 text-xl">✕</button>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300 text-xl">✕</button>
         </div>
         {/* 콘텐츠 */}
         <div className="overflow-y-auto p-4">
           <SingleStationGrid vendorType={vendorType} onSelect={(name) => { onSelect(name); onClose(); }} />
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

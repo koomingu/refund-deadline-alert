@@ -1,10 +1,11 @@
+import { createPortal } from 'react-dom';
 import { fmtFee } from '../utils/fees';
 
 const inputCls = "w-full p-2 border border-gray-300 dark:border-slate-600 rounded text-sm outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100";
 
 export default function CancelModal({ cancelRes, cancelDate, setCancelDate, cancelTime, setCancelTime, cancelPreview, isAlarmHelped, setIsAlarmHelped, onConfirm, onClose }) {
   if (!cancelRes) return null;
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4">
       <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl max-w-sm w-full overflow-hidden border border-gray-100 dark:border-slate-700">
         <div className="p-5 border-b border-gray-100 dark:border-slate-800">
@@ -63,6 +64,7 @@ export default function CancelModal({ cancelRes, cancelDate, setCancelDate, canc
           <button onClick={onConfirm} className="flex-1 py-2 bg-red-500 text-white font-bold rounded-lg hover:bg-red-600">취소 완료 기록</button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
