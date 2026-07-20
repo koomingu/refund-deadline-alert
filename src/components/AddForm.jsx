@@ -124,21 +124,7 @@ export default function AddForm({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={labelCls}>출발일</label>
-              <input type="date" value={date} onChange={e => setDate(e.target.value)} className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls}>출발 시각 <span className="text-gray-400 dark:text-slate-500 font-normal">{schedule ? '(직접 수정 가능)' : ''}</span></label>
-              <input type="time" value={time} onChange={e => setTime(e.target.value)} className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls}>도착 시각 <span className="text-gray-400 dark:text-slate-500 font-normal">(선택)</span></label>
-              <input type="time" value={arrivalTime} onChange={e => setArrivalTime(e.target.value)} className={inputCls} />
-            </div>
-          </div>
-
+          {/* 출발지 ↔ 도착지 */}
           <div>
             <label className={labelCls}>출발지 → 도착지</label>
             <div className="flex gap-2 items-center">
@@ -149,7 +135,13 @@ export default function AddForm({
                     : 'border-gray-300 dark:border-slate-600 text-gray-400 dark:text-slate-500 bg-white dark:bg-slate-800'}`}>
                 {origin || '출발역 선택'}
               </button>
-              <span className="text-gray-400 dark:text-slate-500 shrink-0">→</span>
+              <button
+                type="button"
+                onClick={() => { const tmp = origin; setOrigin(destination); setDestination(tmp); }}
+                title="출발지/도착지 바꾸기"
+                className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-500 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-400 hover:text-blue-600 transition-all text-sm font-bold">
+                ⇄
+              </button>
               <button type="button" onClick={() => setStationModal('destination')}
                 className={`flex-1 p-2.5 border rounded-lg text-sm text-left transition-all ${
                   destination
@@ -192,13 +184,8 @@ export default function AddForm({
                 {schedule.map((train, i) => {
                   const isSelected = time === train.dep;
                   return (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => {
-                        setTime(train.dep);
-                        if (train.arr) setArrivalTime(train.arr);
-                      }}
+                    <button key={i} type="button"
+                      onClick={() => { setTime(train.dep); if (train.arr) setArrivalTime(train.arr); }}
                       className={`py-2 px-1 rounded-lg border text-center transition-all ${
                         isSelected
                           ? 'bg-blue-600 border-blue-600 text-white font-bold shadow-sm'
@@ -221,6 +208,22 @@ export default function AddForm({
               이 노선의 시간표 데이터가 없습니다. 아래에서 직접 입력해 주세요.
             </div>
           )}
+
+          {/* 출발일 / 시각 */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={labelCls}>출발일</label>
+              <input type="date" value={date} onChange={e => setDate(e.target.value)} className={inputCls} />
+            </div>
+            <div>
+              <label className={labelCls}>출발 시각</label>
+              <input type="time" value={time} onChange={e => setTime(e.target.value)} className={inputCls} />
+            </div>
+            <div>
+              <label className={labelCls}>도착 시각 <span className="text-gray-400 dark:text-slate-500 font-normal">(선택)</span></label>
+              <input type="time" value={arrivalTime} onChange={e => setArrivalTime(e.target.value)} className={inputCls} />
+            </div>
+          </div>
 
           <div>
             <label className={labelCls}>결제 금액 <span className="text-gray-400 dark:text-slate-500 font-normal">(선택 — 수수료 금액 계산용)</span></label>
