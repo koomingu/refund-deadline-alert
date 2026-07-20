@@ -1,10 +1,13 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { VENDORS, ALARM_PRESETS } from './constants/vendors';
-import { calcFeeInfo, parseFeeToAmount, calculateTimeline } from './utils/fees';
+import { EXAMS } from './constants/exams';
+import { calcFeeInfo, parseFeeToAmount, calculateTimeline, calcExamFeeInfo, calculateExamTimeline } from './utils/fees';
 import { estimatePrice } from './utils/prices';
 import { fireNotification, requestNotifPermission } from './utils/notifications';
 import AddForm from './components/AddForm';
+import ExamAddForm from './components/ExamAddForm';
 import ReservationCard from './components/ReservationCard';
+import ExamCard from './components/ExamCard';
 import CancelModal from './components/CancelModal';
 import NoShowModal from './components/NoShowModal';
 import DeleteModal from './components/DeleteModal';
@@ -28,6 +31,7 @@ export default function App() {
   });
 
   // 폼 상태
+  const [domain, setDomain]                 = useState('transport'); // 'transport' | 'exam'
   const [editingId, setEditingId]           = useState(null);
   const [vendorType, setVendorType]         = useState('ktx');
   const [date, setDate]                     = useState(() => new Date().toISOString().split('T')[0]);
@@ -41,6 +45,10 @@ export default function App() {
   const [price, setPrice]                   = useState('');
   const [title, setTitle]                   = useState('');
   const [showManualForm, setShowManualForm] = useState(true);
+  // 시험 폼 전용 상태
+  const [examType, setExamType]                       = useState('toeic');
+  const [registrationDeadline, setRegistrationDeadline] = useState('');
+  const [examLocation, setExamLocation]               = useState('');
 
   // UI 상태
   const [toasts, setToasts]                   = useState([]);
@@ -115,17 +123,20 @@ export default function App() {
     setTime(`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`);
     setOrigin(''); setDestination(''); setArrivalTime(''); setPrice(''); setTitle('');
     setPreviewDataList([]); setShowManualForm(true);
+    setExamType('toeic'); setRegistrationDeadline(''); setExamLocation('');
   };
 
-  // ── 예매 ──
+  // ── 예매/시험 등록 ──
   const handleAddReservation = (e) => {
     e.preventDefault();
+    if (domain === 'exam') { handleAddExamReservation(); return; }
     if (!date || !time) { showToast('출발 날짜와 시간을 입력해 주세요.'); return; }
     if (isNaN(new Date(`${date}T${time}`))) { showToast('시간 형식이 올바르지 않습니다.'); return; }
     const vendor = VENDORS.find(v => v.id === vendorType);
     const base = editingId ? reservations.find(r => r.id === editingId) : null;
     const resData = {
       id: editingId ?? Date.now().toString(),
+      domain: 'transport',
       vendorType, vendorName: vendor.name,
       date, time,
       origin: origin || '출발지',
@@ -145,15 +156,50 @@ export default function App() {
     showToast('새로운 예매 내역이 추가되었습니다.'); resetForm();
   };
 
+  const handleAddExamReservation = () => {
+    if (!date || !time) { showToast('시험일과 시험 시각을 입력해 주세요.'); return; }
+    const exam = EXAMS.find(e => e.id === examType) ?? EXAMS[0];
+    const base = editingId ? reservations.find(r => r.id === editingId) : null;
+    const resData = {
+      id: editingId ?? Date.now().toString(),
+      domain: 'exam',
+      examType, examName: exam.name,
+      date, time,
+      registrationDeadline: exam.requiresRegDeadline ? registrationDeadline : '',
+      examLocation: examLocation || '',
+      price: Number(price) || 0,
+      title: title || '',
+      alarms: base?.alarms ?? {}, isExpanded: false,
+      status: base?.status ?? '예정', cancelInfo: base?.cancelInfo ?? null,
+      createdAt: base?.createdAt ?? new Date().toISOString(),
+    };
+    if (editingId) {
+      setReservations(p => p.map(r => r.id === editingId ? resData : r));
+      showToast('시험 일정이 수정되었습니다.'); resetForm(); return;
+    }
+    setReservations(p => [resData, ...p]);
+    showToast('시험 일정이 등록되었습니다!'); resetForm();
+  };
+
   const handleStartEdit = (res) => {
-    setEditingId(res.id); setVendorType(res.vendorType);
+    setEditingId(res.id);
     setDate(res.date); setTime(res.time);
-    setOrigin(res.origin === '출발지' ? '' : res.origin);
-    setDestination(res.destination === '도착지' ? '' : res.destination);
-    setArrivalTime(res.arrivalTime || '');
     setPrice(res.price ? String(res.price) : '');
     setTitle(res.title || '');
-    setShowManualForm(true);
+
+    if (res.domain === 'exam') {
+      setDomain('exam');
+      setExamType(res.examType);
+      setRegistrationDeadline(res.registrationDeadline || '');
+      setExamLocation(res.examLocation || '');
+    } else {
+      setDomain('transport');
+      setVendorType(res.vendorType);
+      setOrigin(res.origin === '출발지' ? '' : res.origin);
+      setDestination(res.destination === '도착지' ? '' : res.destination);
+      setArrivalTime(res.arrivalTime || '');
+      setShowManualForm(true);
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -198,8 +244,10 @@ export default function App() {
     if (!(await requestNotifPermission())) {
       showToast('알림 권한이 없습니다. 브라우저 설정에서 허용해 주세요.'); return;
     }
-    const vendor = VENDORS.find(v => v.id === res.vendorType) ?? VENDORS[0];
-    const timeline = calculateTimeline(res.date, res.time, vendor.rules);
+    const timeline = res.domain === 'exam'
+      ? calculateExamTimeline(res, EXAMS.find(e => e.id === res.examType))
+      : calculateTimeline(res.date, res.time, (VENDORS.find(v => v.id === res.vendorType) ?? VENDORS[0]).rules);
+
     // 켜진 간격 수집
     const activeMinutes = [
       ...ALARM_PRESETS.map(p => p.minutes).filter(m => alarmPresets[m]),
@@ -242,8 +290,14 @@ export default function App() {
   const confirmCancel = () => {
     const res = reservations.find(r => r.id === cancelTargetId);
     if (!res) return;
-    const vendor = VENDORS.find(v => v.id === res.vendorType);
-    const info = calcFeeInfo({ ...res, rules: vendor?.rules ?? [], postRules: vendor?.postRules ?? [] }, cancelDate, cancelTime);
+    let info;
+    if (res.domain === 'exam') {
+      const exam = EXAMS.find(e => e.id === res.examType);
+      info = calcExamFeeInfo(res, exam, cancelDate, cancelTime);
+    } else {
+      const vendor = VENDORS.find(v => v.id === res.vendorType);
+      info = calcFeeInfo({ ...res, rules: vendor?.rules ?? [], postRules: vendor?.postRules ?? [] }, cancelDate, cancelTime);
+    }
     if (!info) return;
     const cancelDT = new Date(`${cancelDate}T${cancelTime}`);
     setReservations(p => p.map(r =>
@@ -257,6 +311,19 @@ export default function App() {
   const confirmNoShow = () => {
     const res = reservations.find(r => r.id === noShowTargetId);
     if (!res) return;
+
+    // 시험 도메인: 불참 = 환불 불가
+    if (res.domain === 'exam') {
+      setReservations(p => p.map(r =>
+        r.id === noShowTargetId ? { ...r, status: '놓침',
+          cancelInfo: { cancelTime: new Date(`${res.date}T${res.time}`).toISOString(), appliedFee: '불가', appliedLabel: '불참(미응시)', isAlarmHelped: false, feeAmount: res.price || 0 }
+        } : r
+      ));
+      setNoShowModalOpen(false); setNoShowTargetId(null);
+      showToast('불참으로 처리되었습니다.');
+      return;
+    }
+
     const vendor = VENDORS.find(v => v.id === res.vendorType);
     const postRule = vendor?.postRules?.[vendor.postRules.length - 1];
     const dep = new Date(`${res.date}T${res.time}`);
@@ -406,6 +473,10 @@ export default function App() {
   const cancelRes = reservations.find(r => r.id === cancelTargetId);
   const cancelPreview = useMemo(() => {
     if (!cancelRes) return null;
+    if (cancelRes.domain === 'exam') {
+      const exam = EXAMS.find(e => e.id === cancelRes.examType);
+      return calcExamFeeInfo(cancelRes, exam, cancelDate, cancelTime);
+    }
     const vendor = VENDORS.find(v => v.id === cancelRes.vendorType);
     return calcFeeInfo({ ...cancelRes, rules: vendor?.rules ?? [], postRules: vendor?.postRules ?? [] }, cancelDate, cancelTime);
   }, [cancelTargetId, cancelDate, cancelTime, reservations]);
@@ -432,6 +503,37 @@ export default function App() {
       <main className="max-w-xl mx-auto p-4 space-y-5">
         {activeTab === 'reservations' && (
           <>
+            {/* 도메인 선택 탭 */}
+            {!editingId && (
+              <div className="flex bg-white rounded-xl shadow-sm border border-gray-200 p-1">
+                {[
+                  { id: 'transport', label: '🚆 교통수단' },
+                  { id: 'exam',      label: '📝 시험' },
+                ].map(d => (
+                  <button
+                    key={d.id}
+                    onClick={() => setDomain(d.id)}
+                    className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${domain === d.id ? 'bg-blue-600 text-white shadow' : 'text-gray-500 hover:bg-gray-50'}`}>
+                    {d.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {domain === 'exam' ? (
+              <ExamAddForm
+                editingId={editingId}
+                examType={examType} setExamType={setExamType}
+                date={date} setDate={setDate}
+                time={time} setTime={setTime}
+                registrationDeadline={registrationDeadline} setRegistrationDeadline={setRegistrationDeadline}
+                examLocation={examLocation} setExamLocation={setExamLocation}
+                price={price} setPrice={setPrice}
+                title={title} setTitle={setTitle}
+                onSubmit={handleAddReservation}
+                onCancelEdit={resetForm}
+              />
+            ) : (
             <AddForm
               editingId={editingId}
               vendorType={vendorType} setVendorType={setVendorType}
@@ -455,6 +557,7 @@ export default function App() {
               onSubmit={handleAddReservation}
               onCancelEdit={resetForm}
             />
+            )}
 
             <section className="space-y-4">
               <h2 className="text-lg font-bold px-1">
@@ -469,19 +572,33 @@ export default function App() {
                 </div>
               )}
 
-              {sortedReservations.map(res => (
-                <ReservationCard
-                  key={res.id}
-                  res={res}
-                  now={now}
-                  editingId={editingId}
-                  onEdit={handleStartEdit}
-                  onDelete={(id) => setDeleteConfirmId(id)}
-                  onStatusChange={handleStatusChange}
-                  onToggleExpand={toggleExpand}
-                  onToggleAlarm={toggleCardAlarm}
-                />
-              ))}
+              {sortedReservations.map(res =>
+                res.domain === 'exam' ? (
+                  <ExamCard
+                    key={res.id}
+                    res={res}
+                    now={now}
+                    editingId={editingId}
+                    onEdit={handleStartEdit}
+                    onDelete={(id) => setDeleteConfirmId(id)}
+                    onStatusChange={handleStatusChange}
+                    onToggleExpand={toggleExpand}
+                    onToggleAlarm={toggleCardAlarm}
+                  />
+                ) : (
+                  <ReservationCard
+                    key={res.id}
+                    res={res}
+                    now={now}
+                    editingId={editingId}
+                    onEdit={handleStartEdit}
+                    onDelete={(id) => setDeleteConfirmId(id)}
+                    onStatusChange={handleStatusChange}
+                    onToggleExpand={toggleExpand}
+                    onToggleAlarm={toggleCardAlarm}
+                  />
+                )
+              )}
             </section>
           </>
         )}

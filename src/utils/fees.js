@@ -74,6 +74,110 @@ export const getCurrentTier = (timeline, now) => {
   return past[0] ?? null;
 };
 
+// ─── 시험 도메인 전용 함수 ───────────────────────────────────────────────────
+
+// rule 하나의 트리거 시각을 계산
+export const calcExamTriggerTime = (rule, examDateStr, examTimeStr, regDeadlineStr) => {
+  if (rule.anchorType === 'examDate') {
+    const dt = new Date(`${examDateStr}T${examTimeStr || '00:00'}`);
+    return new Date(dt.getTime() - rule.hoursBefore * 3600000);
+  }
+  if (rule.anchorType === 'regDeadline') {
+    return regDeadlineStr ? new Date(regDeadlineStr) : null;
+  }
+  if (rule.anchorType === 'examDayOffset') {
+    const base = new Date(`${examDateStr}T00:00:00`);
+    base.setDate(base.getDate() + rule.daysOffset);
+    const [h, m] = rule.timeOfDay.split(':');
+    base.setHours(parseInt(h), parseInt(m), 0, 0);
+    return base;
+  }
+  return null;
+};
+
+// 시험 타임라인 계산 — 각 tier에 triggerTime / untilTime 추가
+export const calculateExamTimeline = (res, exam) => {
+  if (!exam || !res.date) return [];
+  const rules = exam.isCustom ? (res.customRules ?? []) : exam.rules;
+
+  const tiers = rules
+    .map(rule => {
+      const triggerTime = calcExamTriggerTime(rule, res.date, res.time, res.registrationDeadline);
+      return { ...rule, triggerTime };
+    })
+    .filter(t => t.triggerTime !== null)
+    .sort((a, b) => a.triggerTime - b.triggerTime);
+
+  const result = tiers.map((tier, i) => {
+    const untilTime = i + 1 < tiers.length
+      ? tiers[i + 1].triggerTime
+      : new Date(`${res.date}T${res.time || '23:59'}`);
+    return { ...tier, untilTime };
+  });
+
+  // 무료 구간을 첫 번째 tier 앞에 삽입
+  if (exam.freeLabel && result.length > 0) {
+    result.unshift({
+      id: 0,
+      fee: '무료',
+      label: exam.freeLabel,
+      anchorType: 'free',
+      triggerTime: null,
+      untilTime: result[0].triggerTime,
+    });
+  }
+
+  return result;
+};
+
+// 시험 취소 수수료 계산
+export const calcExamFeeInfo = (res, exam, cancelDateStr, cancelTimeStr) => {
+  if (!cancelDateStr || !cancelTimeStr || !res || !exam) return null;
+  const cancelDT = new Date(`${cancelDateStr}T${cancelTimeStr}`);
+  if (isNaN(cancelDT)) return null;
+
+  const timeline = calculateExamTimeline(res, exam);
+  const passed = timeline.filter(t => t.triggerTime !== null && cancelDT >= t.triggerTime);
+
+  if (passed.length === 0) {
+    return {
+      appliedFee: '무료',
+      appliedLabel: exam.freeLabel ?? '접수기간 내',
+      feeAmount: 0,
+    };
+  }
+
+  const matched = passed[passed.length - 1];
+  return {
+    appliedFee: matched.fee,
+    appliedLabel: matched.label,
+    feeAmount: parseFeeToAmount(matched.fee, res.price),
+  };
+};
+
+// 다음 수수료 변경 구간 정보
+export const getExamNextTierInfo = (timeline, now) => {
+  const upcoming = timeline
+    .filter(t => t.triggerTime && t.triggerTime > now)
+    .sort((a, b) => a.triggerTime - b.triggerTime);
+  if (!upcoming.length) return null;
+
+  const next = upcoming[0];
+  const diffMs = next.triggerTime - now;
+  const d = Math.floor(diffMs / 86400000);
+  const h = Math.floor((diffMs % 86400000) / 3600000);
+  const m = Math.floor((diffMs % 3600000) / 60000);
+  const timeStr = d >= 2 ? `${d}일` : h === 0 ? `${m}분` : m === 0 ? `${h}시간` : `${h}시간 ${m}분`;
+
+  const past = timeline.filter(t => t.triggerTime && t.triggerTime <= now).sort((a, b) => b.triggerTime - a.triggerTime);
+  const curFee = past[0]?.fee ?? '무료';
+  if (curFee === next.fee) return null;
+
+  return { timeStr, nextFee: next.fee, curFee, urgency: diffMs < 3 * 3600000 };
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export const calcFeeInfo = (res, cancelDateStr, cancelTimeStr) => {
   if (!cancelDateStr || !cancelTimeStr || !res) return null;
   const cancelDT = new Date(`${cancelDateStr}T${cancelTimeStr}`);
