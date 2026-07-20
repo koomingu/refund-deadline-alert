@@ -444,5 +444,6 @@ export const getSchedule = (vendorType, origin, destination) => {
   if (vendorType === 'bus') return BUS_TIMES;
   const db = SCHEDULES[vendorType];
   if (!db) return null;
+  if (!origin || !destination) return null;
   return db[`${origin}-${destination}`] ?? null;
 };

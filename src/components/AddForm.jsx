@@ -29,7 +29,7 @@ export default function AddForm({
 }) {
   const fileInputRef = useRef(null);
   const [stationModal, setStationModal] = useState(null);
-  const schedule = (origin && destination) ? getSchedule(vendorType, origin, destination) : null;
+  const schedule = getSchedule(vendorType, origin, destination) ?? [];
 
   return (
     <section className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden">
@@ -104,6 +104,7 @@ export default function AddForm({
 
       {showManualForm && (
         <form onSubmit={onSubmit} className="p-5 pt-4 border-t border-gray-100 dark:border-slate-800 space-y-4">
+          {/* 1. 교통수단 */}
           <div>
             <label className={labelCls}>교통수단</label>
             <div className="grid grid-cols-3 gap-2">
@@ -124,7 +125,13 @@ export default function AddForm({
             </div>
           </div>
 
-          {/* 출발지 ↔ 도착지 */}
+          {/* 2. 출발일 */}
+          <div>
+            <label className={labelCls}>출발일</label>
+            <input type="date" value={date} onChange={e => setDate(e.target.value)} className={inputCls} />
+          </div>
+
+          {/* 3. 출발지 ↔ 도착지 */}
           <div>
             <label className={labelCls}>출발지 → 도착지</label>
             <div className="flex gap-2 items-center">
@@ -171,58 +178,43 @@ export default function AddForm({
             )}
           </div>
 
-          {/* 열차 선택 */}
-          {schedule && (
-            <div>
-              <label className={labelCls}>
-                열차 선택
-                <span className="text-gray-400 dark:text-slate-500 font-normal ml-1">
-                  {vendorType === 'bus' ? '(참고용 운행 간격)' : '(간이 시간표 — 참고용)'}
-                </span>
-              </label>
-              <div className="grid grid-cols-4 gap-1.5 max-h-48 overflow-y-auto pr-0.5">
-                {schedule.map((train, i) => {
-                  const isSelected = time === train.dep;
-                  return (
-                    <button key={i} type="button"
-                      onClick={() => { setTime(train.dep); if (train.arr) setArrivalTime(train.arr); }}
-                      className={`py-2 px-1 rounded-lg border text-center transition-all ${
-                        isSelected
-                          ? 'bg-blue-600 border-blue-600 text-white font-bold shadow-sm'
-                          : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-600 text-gray-700 dark:text-slate-300 hover:border-blue-400 dark:hover:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20'
-                      }`}>
-                      <div className="text-xs font-bold">{train.dep}</div>
-                      {train.arr && <div className="text-[10px] text-current opacity-70">→{train.arr}</div>}
-                    </button>
-                  );
-                })}
+          {/* 4. 출발 시각 — 그리드 선택 전용 */}
+          <div>
+            <label className={labelCls}>
+              출발 시각
+              <span className="text-gray-400 dark:text-slate-500 font-normal ml-1">
+                {vendorType === 'bus' ? '(참고용 운행 간격)' : '(간이 시간표 — 참고용)'}
+              </span>
+            </label>
+            {schedule.length === 0 && (
+              <div className="text-xs text-gray-400 dark:text-slate-500 bg-gray-50 dark:bg-slate-800 rounded-lg px-3 py-3 border border-gray-200 dark:border-slate-700 text-center">
+                {!origin || !destination ? '출발지와 도착지를 먼저 선택해 주세요.' : '이 노선의 시간표 데이터가 없습니다.'}
               </div>
-              {!schedule.some(t => t.arr) && (
-                <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-1">버스는 노선별로 시간이 다릅니다. 도착 시각은 직접 입력해 주세요.</p>
-              )}
+            )}
+            <div className="grid grid-cols-4 gap-1.5 max-h-52 overflow-y-auto pr-0.5">
+              {schedule.map((train, i) => {
+                const isSelected = time === train.dep;
+                return (
+                  <button key={i} type="button"
+                    onClick={() => { setTime(train.dep); if (train.arr) setArrivalTime(train.arr); else setArrivalTime(''); }}
+                    className={`py-2 px-1 rounded-lg border text-center transition-all ${
+                      isSelected
+                        ? 'bg-blue-600 border-blue-600 text-white font-bold shadow-sm'
+                        : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-600 text-gray-700 dark:text-slate-300 hover:border-blue-400 dark:hover:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20'
+                    }`}>
+                    <div className="text-xs font-bold">{train.dep}</div>
+                    {train.arr && <div className="text-[10px] text-current opacity-70">→{train.arr}</div>}
+                  </button>
+                );
+              })}
             </div>
-          )}
-
-          {!schedule && origin && destination && (
-            <div className="text-xs text-gray-400 dark:text-slate-500 bg-gray-50 dark:bg-slate-800 rounded-lg px-3 py-2 border border-gray-200 dark:border-slate-700">
-              이 노선의 시간표 데이터가 없습니다. 아래에서 직접 입력해 주세요.
-            </div>
-          )}
-
-          {/* 출발일 / 시각 */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={labelCls}>출발일</label>
-              <input type="date" value={date} onChange={e => setDate(e.target.value)} className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls}>출발 시각</label>
-              <input type="time" value={time} onChange={e => setTime(e.target.value)} className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls}>도착 시각 <span className="text-gray-400 dark:text-slate-500 font-normal">(선택)</span></label>
-              <input type="time" value={arrivalTime} onChange={e => setArrivalTime(e.target.value)} className={inputCls} />
-            </div>
+            {time && (
+              <p className="text-xs text-blue-600 dark:text-blue-400 mt-1.5 font-semibold">
+                선택됨: {time}{arrivalTime ? ` → ${arrivalTime}` : ''}
+                <button type="button" onClick={() => { setTime(''); setArrivalTime(''); }}
+                  className="ml-2 text-gray-400 dark:text-slate-500 hover:text-red-400 font-normal">✕ 초기화</button>
+              </p>
+            )}
           </div>
 
           <div>
