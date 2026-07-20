@@ -443,7 +443,6 @@ export const BUS_TIMES = BUS_GENERIC;
 export const getSchedule = (vendorType, origin, destination) => {
   if (vendorType === 'bus') return BUS_TIMES;
   const db = SCHEDULES[vendorType];
-  if (!db) return null;
-  if (!origin || !destination) return null;
-  return db[`${origin}-${destination}`] ?? null;
+  if (!db) return BUS_TIMES;
+  return db[`${origin}-${destination}`] ?? BUS_TIMES;
 };

@@ -186,12 +186,7 @@ export default function AddForm({
                 {vendorType === 'bus' ? '(참고용 운행 간격)' : '(간이 시간표 — 참고용)'}
               </span>
             </label>
-            {schedule.length === 0 && (
-              <div className="text-xs text-gray-400 dark:text-slate-500 bg-gray-50 dark:bg-slate-800 rounded-lg px-3 py-3 border border-gray-200 dark:border-slate-700 text-center">
-                {!origin || !destination ? '출발지와 도착지를 먼저 선택해 주세요.' : '이 노선의 시간표 데이터가 없습니다.'}
-              </div>
-            )}
-            <div className="grid grid-cols-4 gap-1.5 max-h-52 overflow-y-auto pr-0.5">
+<div className="grid grid-cols-4 gap-1.5 max-h-52 overflow-y-auto pr-0.5">
               {schedule.map((train, i) => {
                 const isSelected = time === train.dep;
                 return (
