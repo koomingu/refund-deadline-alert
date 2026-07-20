@@ -606,9 +606,9 @@ export default function App() {
         </nav>
         <div className="px-4 py-4 border-t border-gray-100 dark:border-slate-800">
           <button onClick={() => setDarkMode(d => !d)}
-            className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 transition-all font-medium">
-            <span>{darkMode ? '라이트 모드' : '다크 모드'}</span>
-            <span className="text-base">{darkMode ? '☀️' : '🌙'}</span>
+            title={darkMode ? '라이트 모드로 전환' : '다크 모드로 전환'}
+            className="w-full flex items-center justify-center px-3 py-2 rounded-lg text-xl text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 transition-all">
+            {darkMode ? '☀️' : '🌙'}
           </button>
         </div>
       </aside>
@@ -640,7 +640,7 @@ export default function App() {
         <div className="p-4 lg:p-6">
 
           {activeTab === 'reservations' && (
-            <div className="lg:grid lg:grid-cols-[400px_1fr] lg:gap-6 lg:items-start space-y-5 lg:space-y-0">
+            <div className="lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start space-y-5 lg:space-y-0">
               {FormPanel}
               {CardListPanel}
             </div>
