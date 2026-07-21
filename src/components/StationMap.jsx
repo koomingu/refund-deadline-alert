@@ -86,7 +86,7 @@ function StationBtn({ name, origin, destination, onStation }) {
   return (
     <button onClick={() => onStation(name)}
       className={`py-2 px-1 text-xs rounded-lg font-semibold border transition-all truncate ${
-        isOrigin ? 'bg-blue-500 text-white border-blue-500' :
+        isOrigin ? 'bg-indigo-500 text-white border-indigo-500' :
         isDest   ? 'bg-orange-400 text-white border-orange-400' :
         'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}>
       {name}
@@ -103,7 +103,7 @@ function ActionButtons({ origin, destination, onReset, onSave }) {
         </button>
       )}
       <button onClick={onSave} disabled={!origin || !destination}
-        className="flex-1 py-2.5 bg-blue-600 text-white font-bold rounded-lg text-sm disabled:bg-gray-200 disabled:text-gray-400 hover:bg-blue-700 transition-colors">
+        className="flex-1 py-2.5 bg-indigo-600 text-white font-bold rounded-lg text-sm disabled:bg-gray-200 disabled:text-gray-400 hover:bg-indigo-700 transition-colors">
         {origin && destination ? `⭐ ${origin} → ${destination} 즐겨찾기 추가` : '출발역과 도착역을 선택해 주세요'}
       </button>
     </div>
@@ -114,7 +114,7 @@ function SelectionBar({ origin, destination }) {
   return (
     <div className="flex items-center gap-2 text-sm">
       <div className={`flex-1 text-center py-2 rounded-xl font-bold border-2 transition-all ${
-        origin ? 'border-blue-400 bg-blue-50 text-blue-800' : 'border-blue-500 bg-blue-50 text-blue-600 animate-pulse'}`}>
+        origin ? 'border-indigo-400 bg-indigo-50 text-indigo-800' : 'border-indigo-500 bg-indigo-50 text-indigo-600 animate-pulse'}`}>
         {origin ? `🚉 ${origin}` : '출발역을 선택해 주세요'}
       </div>
       <span className="text-gray-400 font-bold shrink-0">→</span>
@@ -168,7 +168,7 @@ function KtxPicker({ origin, destination, onStation, onSave, onReset }) {
               onClick={() => setActiveIdx(cho)}
               disabled={!hasStations}
               className={`w-8 h-8 text-xs font-bold rounded-lg border transition-all ${
-                activeIdx === cho ? 'bg-blue-600 text-white border-blue-600' :
+                activeIdx === cho ? 'bg-indigo-600 text-white border-indigo-600' :
                 hasStations ? 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50' :
                 'bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed'}`}>
               {cho}
@@ -240,7 +240,7 @@ function SingleStationGrid({ vendorType, onSelect }) {
           <div className="grid grid-cols-4 gap-1.5">
             {SRT_MAIN.map(n => (
               <button key={n} onClick={() => onSelect(n)}
-                className="py-2 px-1 text-xs rounded-lg font-semibold border bg-white text-gray-700 border-gray-200 hover:bg-blue-50 hover:border-blue-400 hover:text-blue-700 transition-all">
+                className="py-2 px-1 text-xs rounded-lg font-semibold border bg-white text-gray-700 border-gray-200 hover:bg-indigo-50 hover:border-indigo-400 hover:text-indigo-700 transition-all">
                 {n}
               </button>
             ))}
@@ -251,7 +251,7 @@ function SingleStationGrid({ vendorType, onSelect }) {
           <div className="grid grid-cols-4 gap-1.5">
             {SRT_ALL.map(n => (
               <button key={n} onClick={() => onSelect(n)}
-                className="py-2 px-1 text-xs rounded-lg font-semibold border bg-white text-gray-700 border-gray-200 hover:bg-blue-50 hover:border-blue-400 hover:text-blue-700 transition-all">
+                className="py-2 px-1 text-xs rounded-lg font-semibold border bg-white text-gray-700 border-gray-200 hover:bg-indigo-50 hover:border-indigo-400 hover:text-indigo-700 transition-all">
                 {n}
               </button>
             ))}
@@ -271,7 +271,7 @@ function SingleStationGrid({ vendorType, onSelect }) {
             return (
               <button key={cho} onClick={() => setActiveIdx(cho)} disabled={!has}
                 className={`w-8 h-8 text-xs font-bold rounded-lg border transition-all ${
-                  activeIdx === cho ? 'bg-blue-600 text-white border-blue-600' :
+                  activeIdx === cho ? 'bg-indigo-600 text-white border-indigo-600' :
                   has ? 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50' :
                   'bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed'}`}>
                 {cho}
@@ -282,7 +282,7 @@ function SingleStationGrid({ vendorType, onSelect }) {
         <div className="grid grid-cols-4 gap-1.5">
           {filtered.map(n => (
             <button key={n} onClick={() => onSelect(n)}
-              className="py-2 px-1 text-xs rounded-lg font-semibold border bg-white text-gray-700 border-gray-200 hover:bg-blue-50 hover:border-blue-400 hover:text-blue-700 transition-all truncate">
+              className="py-2 px-1 text-xs rounded-lg font-semibold border bg-white text-gray-700 border-gray-200 hover:bg-indigo-50 hover:border-indigo-400 hover:text-indigo-700 transition-all truncate">
               {n}
             </button>
           ))}
@@ -296,7 +296,7 @@ function SingleStationGrid({ vendorType, onSelect }) {
     <div className="grid grid-cols-4 gap-1.5">
       {BUS_CITIES.map(n => (
         <button key={n} onClick={() => onSelect(n)}
-          className="py-2 px-1 text-xs rounded-lg font-semibold border bg-white text-gray-700 border-gray-200 hover:bg-blue-50 hover:border-blue-400 hover:text-blue-700 transition-all">
+          className="py-2 px-1 text-xs rounded-lg font-semibold border bg-white text-gray-700 border-gray-200 hover:bg-indigo-50 hover:border-indigo-400 hover:text-indigo-700 transition-all">
           {n}
         </button>
       ))}

@@ -1,7 +1,7 @@
 import { createPortal } from 'react-dom';
 import { fmtFee } from '../utils/fees';
 
-const inputCls = "w-full p-2 border border-gray-300 dark:border-slate-600 rounded text-sm outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100";
+const inputCls = "w-full p-2 border border-gray-300 dark:border-slate-600 rounded text-sm outline-none focus:ring-1 focus:ring-indigo-500 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100";
 
 export default function CancelModal({ cancelRes, cancelDate, setCancelDate, cancelTime, setCancelTime, cancelPreview, isAlarmHelped, setIsAlarmHelped, onConfirm, onClose }) {
   if (!cancelRes) return null;
@@ -54,9 +54,9 @@ export default function CancelModal({ cancelRes, cancelDate, setCancelDate, canc
               <input type="time" value={cancelTime} onChange={e => setCancelTime(e.target.value)} className={inputCls} />
             </div>
           </div>
-          <label className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg cursor-pointer">
-            <input type="checkbox" checked={isAlarmHelped} onChange={e => setIsAlarmHelped(e.target.checked)} className="w-4 h-4 text-blue-600 rounded" />
-            <span className="text-sm font-semibold text-blue-900 dark:text-blue-300">알림 덕분에 제때 취소했어요</span>
+          <label className="flex items-center gap-2 p-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-lg cursor-pointer">
+            <input type="checkbox" checked={isAlarmHelped} onChange={e => setIsAlarmHelped(e.target.checked)} className="w-4 h-4 text-indigo-600 rounded" />
+            <span className="text-sm font-semibold text-indigo-900 dark:text-indigo-300">알림 덕분에 제때 취소했어요</span>
           </label>
         </div>
         <div className="flex bg-gray-50 dark:bg-slate-800 p-3 gap-2 border-t border-gray-100 dark:border-slate-700">

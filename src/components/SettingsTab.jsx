@@ -37,8 +37,8 @@ export default function SettingsTab({ alarmPresets, setAlarmPresets, customAlarm
     showToast(`⭐ '${label}' 노선이 저장됐습니다.`);
   };
 
-  const cardCls = "bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-5";
-  const inputCls = "w-full p-2.5 border border-gray-300 dark:border-slate-600 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500";
+  const cardCls = "bg-white dark:bg-slate-900 rounded-2xl shadow-sm shadow-gray-900/5 border border-gray-200/70 dark:border-slate-700/70 p-5";
+  const inputCls = "w-full p-2.5 border border-gray-300 dark:border-slate-600 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500";
 
   return (
     <section className="space-y-4 mt-4">
@@ -55,7 +55,7 @@ export default function SettingsTab({ alarmPresets, setAlarmPresets, customAlarm
             { id: 'bus', label: '🚌 버스' },
           ].map(v => (
             <button key={v.id} onClick={() => setMapVendor(v.id)}
-              className={`flex-1 py-1.5 text-sm font-bold rounded-md transition-all ${mapVendor === v.id ? 'bg-white dark:bg-slate-700 text-blue-700 dark:text-blue-300 shadow' : 'text-gray-500 dark:text-slate-400'}`}>
+              className={`flex-1 py-1.5 text-sm font-bold rounded-md transition-all ${mapVendor === v.id ? 'bg-white dark:bg-slate-700 text-indigo-700 dark:text-indigo-300 shadow' : 'text-gray-500 dark:text-slate-400'}`}>
               {v.label}
             </button>
           ))}
@@ -68,9 +68,9 @@ export default function SettingsTab({ alarmPresets, setAlarmPresets, customAlarm
             <p className="text-xs font-bold text-gray-500 dark:text-slate-400 mb-2">저장된 즐겨찾기</p>
             <div className="flex flex-wrap gap-2">
               {savedRoutes.map(route => (
-                <div key={route.id} className="flex items-center gap-1 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-full px-3 py-1.5">
-                  <span className="text-xs text-blue-400 dark:text-blue-500 font-semibold mr-0.5">{route.vendorName}</span>
-                  <span className="text-xs font-bold text-blue-800 dark:text-blue-300">{route.label}</span>
+                <div key={route.id} className="flex items-center gap-1 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-full px-3 py-1.5">
+                  <span className="text-xs text-indigo-400 dark:text-indigo-500 font-semibold mr-0.5">{route.vendorName}</span>
+                  <span className="text-xs font-bold text-indigo-800 dark:text-indigo-300">{route.label}</span>
                   <button onClick={() => setSavedRoutes(p => p.filter(r => r.id !== route.id))}
                     className="text-gray-300 dark:text-slate-600 hover:text-red-400 text-xs ml-1">✕</button>
                 </div>
@@ -85,7 +85,7 @@ export default function SettingsTab({ alarmPresets, setAlarmPresets, customAlarm
         <h3 className="text-base font-bold text-gray-800 dark:text-slate-100 mb-1">Gemini API 키</h3>
         <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
           승차권 이미지 자동 인식에 사용됩니다.{' '}
-          <a href="https://aistudio.google.com" target="_blank" rel="noreferrer" className="text-blue-500 underline">aistudio.google.com</a>
+          <a href="https://aistudio.google.com" target="_blank" rel="noreferrer" className="text-indigo-500 underline">aistudio.google.com</a>
           {' '}에서 무료로 발급받을 수 있어요.
         </p>
         <div className="flex gap-2 items-center">
@@ -104,7 +104,7 @@ export default function SettingsTab({ alarmPresets, setAlarmPresets, customAlarm
             </button>
           </div>
           <button onClick={handleSaveApiKey}
-            className="shrink-0 px-4 py-2.5 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 text-sm">
+            className="shrink-0 px-4 py-2.5 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 text-sm">
             저장
           </button>
         </div>
@@ -124,7 +124,7 @@ export default function SettingsTab({ alarmPresets, setAlarmPresets, customAlarm
               <span className="text-sm font-semibold text-gray-700 dark:text-slate-300">{p.label}</span>
               <button
                 onClick={() => setAlarmPresets(prev => ({ ...prev, [p.minutes]: !prev[p.minutes] }))}
-                className={`relative w-12 h-6 rounded-full transition-colors ${alarmPresets[p.minutes] ? 'bg-blue-500' : 'bg-gray-200 dark:bg-slate-700'}`}>
+                className={`relative w-12 h-6 rounded-full transition-colors ${alarmPresets[p.minutes] ? 'bg-indigo-500' : 'bg-gray-200 dark:bg-slate-700'}`}>
                 <span style={{ left: alarmPresets[p.minutes] ? '26px' : '2px' }} className="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all" />
               </button>
             </div>
@@ -138,7 +138,7 @@ export default function SettingsTab({ alarmPresets, setAlarmPresets, customAlarm
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setAlarmPresets(prev => ({ ...prev, [m]: !prev[m] }))}
-                    className={`relative w-12 h-6 rounded-full transition-colors ${alarmPresets[m] ? 'bg-blue-500' : 'bg-gray-200 dark:bg-slate-700'}`}>
+                    className={`relative w-12 h-6 rounded-full transition-colors ${alarmPresets[m] ? 'bg-indigo-500' : 'bg-gray-200 dark:bg-slate-700'}`}>
                     <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${alarmPresets[m] ? 'translate-x-6' : 'translate-x-0.5'}`} />
                   </button>
                   <button onClick={() => { setCustomAlarmPresets(p => p.filter(x => x !== m)); setAlarmPresets(prev => { const n = { ...prev }; delete n[m]; return n; }); }}
@@ -157,7 +157,7 @@ export default function SettingsTab({ alarmPresets, setAlarmPresets, customAlarm
               fireNotification('취소 수수료 지킴이 ⏰', '테스트 알림입니다. 알림이 정상적으로 작동하고 있어요!', 'test');
               showToast('테스트 알림을 전송했습니다.');
             }}
-            className="w-full py-2.5 border border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 font-bold rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 text-sm transition-colors">
+            className="w-full py-2.5 border border-indigo-300 dark:border-indigo-700 text-indigo-600 dark:text-indigo-400 font-bold rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20 text-sm transition-colors">
             🔔 테스트 알림 보내기
           </button>
         </div>
@@ -172,7 +172,7 @@ export default function SettingsTab({ alarmPresets, setAlarmPresets, customAlarm
           />
           <span className="text-sm text-gray-400 dark:text-slate-500 shrink-0">분 전</span>
           <button onClick={handleAdd}
-            className="shrink-0 px-4 py-2.5 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 text-sm">
+            className="shrink-0 px-4 py-2.5 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 text-sm">
             추가
           </button>
         </div>

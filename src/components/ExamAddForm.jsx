@@ -1,6 +1,6 @@
 import { EXAMS } from '../constants/exams';
 
-const inputCls = "w-full p-2.5 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500";
+const inputCls = "w-full p-2.5 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500";
 const labelCls = "block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-1";
 
 export default function ExamAddForm({
@@ -22,7 +22,7 @@ export default function ExamAddForm({
   };
 
   return (
-    <section className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden">
+    <section className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm shadow-gray-900/5 border border-gray-200/70 dark:border-slate-700/70 overflow-hidden">
       {editingId && (
         <div className="flex items-center justify-between bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800 px-4 py-2.5">
           <span className="text-sm font-bold text-amber-800 dark:text-amber-300">시험 일정 수정 중</span>
@@ -38,7 +38,7 @@ export default function ExamAddForm({
               <button key={e.id} type="button" onClick={() => handleExamTypeChange(e.id)}
                 className={`py-2.5 px-1 text-xs rounded-lg border flex flex-col items-center gap-0.5 transition-all leading-tight text-center ${
                   examType === e.id
-                    ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-500 text-blue-700 dark:text-blue-300 font-bold ring-1 ring-blue-500'
+                    ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-500 text-indigo-700 dark:text-indigo-300 font-bold ring-1 ring-indigo-500'
                     : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-600 text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700'
                 }`}>
                 <span className="text-base">{e.isCustom ? '✏️' : '📝'}</span>
@@ -97,7 +97,7 @@ export default function ExamAddForm({
 
         <button type="submit"
           className={`w-full text-white font-bold py-3.5 rounded-lg transition-colors shadow-sm ${
-            editingId ? 'bg-amber-500 hover:bg-amber-600' : 'bg-blue-600 hover:bg-blue-700'
+            editingId ? 'bg-amber-500 hover:bg-amber-600' : 'bg-indigo-600 hover:bg-indigo-700'
           }`}>
           {editingId ? '수정 완료' : '시험 일정 등록'}
         </button>

@@ -501,13 +501,13 @@ export default function App() {
   const FormPanel = (
     <div className="space-y-4 lg:sticky lg:top-6">
       {!editingId && (
-        <div className="flex bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-1">
+        <div className="flex bg-white dark:bg-slate-900 rounded-2xl shadow-sm shadow-gray-900/5 border border-gray-200/70 dark:border-slate-700/70 p-1">
           {[
             { id: 'transport', label: '🚆 교통수단' },
             { id: 'exam',      label: '📝 시험' },
           ].map(d => (
             <button key={d.id} onClick={() => setDomain(d.id)}
-              className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${domain === d.id ? 'bg-blue-600 text-white shadow' : 'text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800'}`}>
+              className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${domain === d.id ? 'bg-indigo-600 text-white shadow' : 'text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800'}`}>
               {d.label}
             </button>
           ))}
@@ -557,10 +557,10 @@ export default function App() {
   const CardListPanel = (
     <section className="space-y-4">
       <h2 className="text-base font-bold px-1 text-gray-700 dark:text-slate-300">
-        등록된 여정 <span className="text-blue-600 dark:text-blue-400">({reservations.length})</span>
+        등록된 여정 <span className="text-indigo-600 dark:text-indigo-400">({reservations.length})</span>
       </h2>
       {reservations.length === 0 && (
-        <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700">
+        <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-2xl shadow-sm shadow-gray-900/5 border border-gray-200/70 dark:border-slate-700/70">
           <div className="text-5xl mb-3">📅</div>
           <p className="font-semibold text-gray-500 dark:text-slate-400">등록된 예매 내역이 없습니다.</p>
           <p className="text-sm mt-1 text-gray-400 dark:text-slate-500">캡처 이미지로 예매를 추가해보세요.</p>
@@ -584,59 +584,70 @@ export default function App() {
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-slate-100 font-sans lg:flex">
 
       {/* ── 사이드바 (lg+) ── */}
-      <aside className="hidden lg:flex lg:flex-col lg:w-56 lg:fixed lg:inset-y-0 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-700 z-20">
-        <div className="px-5 py-6 border-b border-gray-100 dark:border-slate-800">
-          <div className="text-xs font-bold text-blue-600 dark:text-blue-400 tracking-widest uppercase mb-0.5">취소 수수료</div>
-          <h1 className="text-base font-extrabold text-gray-900 dark:text-white leading-tight">지킴이</h1>
+      <aside className="hidden lg:flex lg:flex-col lg:w-60 lg:fixed lg:inset-y-0 bg-white dark:bg-slate-900 border-r border-gray-200/70 dark:border-slate-800 z-20">
+        <div className="px-6 py-7 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center text-white text-base shadow-sm shadow-indigo-500/30 shrink-0">
+            🎫
+          </div>
+          <div className="leading-tight">
+            <div className="text-[11px] font-bold text-indigo-500 dark:text-indigo-400 tracking-wide">취소 수수료</div>
+            <h1 className="text-[15px] font-extrabold text-gray-900 dark:text-white -mt-0.5">지킴이</h1>
+          </div>
         </div>
-        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+        <nav className="flex-1 px-3.5 pt-2 space-y-1 overflow-y-auto">
           {TABS.map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-semibold transition-all text-left ${
+              className={`relative w-full flex items-center justify-between pl-4 pr-3 py-2.5 rounded-xl text-[13.5px] font-semibold transition-all text-left ${
                 activeTab === tab.id
-                  ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                  : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800'
+                  ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300'
+                  : 'text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800/60 hover:text-gray-800 dark:hover:text-slate-200'
               }`}>
+              {activeTab === tab.id && (
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-4 rounded-full bg-indigo-600" />
+              )}
               <span>{tab.label}</span>
               {tab.badge && (
-                <span className="bg-blue-600 text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">{tab.badge}</span>
+                <span className="bg-indigo-600 text-white text-[11px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center leading-none">{tab.badge}</span>
               )}
             </button>
           ))}
         </nav>
-        <div className="px-4 py-4 border-t border-gray-100 dark:border-slate-800">
+        <div className="px-4 py-4 mx-3.5 mb-3 border-t border-gray-100 dark:border-slate-800">
           <button onClick={() => setDarkMode(d => !d)}
             title={darkMode ? '라이트 모드로 전환' : '다크 모드로 전환'}
-            className="w-full flex items-center justify-center px-3 py-2 rounded-lg text-xl text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 transition-all">
-            {darkMode ? '☀️' : '🌙'}
+            className="w-full flex items-center justify-center gap-2 mt-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-gray-500 dark:text-slate-400 bg-gray-50 dark:bg-slate-800/60 hover:bg-gray-100 dark:hover:bg-slate-800 transition-all">
+            <span className="text-base">{darkMode ? '☀️' : '🌙'}</span>
+            <span>{darkMode ? '라이트 모드' : '다크 모드'}</span>
           </button>
         </div>
       </aside>
 
       {/* ── 모바일 헤더 ── */}
-      <header className="lg:hidden bg-blue-700 dark:bg-slate-900 dark:border-b dark:border-slate-700 text-white p-4 shadow-md sticky top-0 z-10">
+      <header className="lg:hidden bg-gradient-to-br from-indigo-600 to-indigo-800 dark:from-slate-900 dark:to-slate-900 dark:border-b dark:border-slate-800 text-white p-4 shadow-md sticky top-0 z-10">
         <div className="flex items-center justify-between mb-3">
-          <h1 className="text-lg font-extrabold">취소 수수료 지킴이</h1>
+          <h1 className="text-[17px] font-extrabold flex items-center gap-1.5">
+            <span className="text-lg">🎫</span> 취소 수수료 지킴이
+          </h1>
           <button onClick={() => setDarkMode(d => !d)}
-            className="text-blue-200 dark:text-slate-400 hover:text-white text-xl p-1 rounded">
+            className="text-indigo-200 dark:text-slate-400 hover:text-white text-lg w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors">
             {darkMode ? '☀️' : '🌙'}
           </button>
         </div>
-        <div className="flex bg-blue-900/40 dark:bg-slate-800/60 rounded-lg p-1">
+        <div className="flex bg-white/10 dark:bg-slate-800/60 rounded-xl p-1">
           {TABS.map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 py-2 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1 ${
-                activeTab === tab.id ? 'bg-white dark:bg-slate-700 text-blue-800 dark:text-white shadow' : 'text-blue-100 hover:text-white'
+              className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1 ${
+                activeTab === tab.id ? 'bg-white dark:bg-slate-700 text-indigo-700 dark:text-white shadow' : 'text-indigo-100 hover:text-white'
               }`}>
               {tab.label}
-              {tab.badge && <span className="bg-blue-500 text-white text-[10px] font-bold px-1 rounded-full">{tab.badge}</span>}
+              {tab.badge && <span className="bg-indigo-500 text-white text-[10px] font-bold px-1 rounded-full">{tab.badge}</span>}
             </button>
           ))}
         </div>
       </header>
 
       {/* ── 메인 콘텐츠 ── */}
-      <main className="lg:pl-56 flex-1 min-h-screen pb-20">
+      <main className="lg:pl-60 flex-1 min-h-screen pb-20">
         <div className="p-4 lg:p-6">
 
           {activeTab === 'reservations' && (

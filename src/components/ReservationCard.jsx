@@ -22,14 +22,14 @@ export default function ReservationCard({ res, now, editingId, onEdit, onDelete,
   const hasAlarm = Object.keys(res.alarms ?? {}).length > 0;
 
   const statusColor = {
-    '예정':    'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300',
+    '예정':    'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-800 dark:text-indigo-300',
     '이용완료': 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300',
     '취소함':  'bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-slate-300',
     '놓침':    'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300',
-  }[res.status] ?? 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300';
+  }[res.status] ?? 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-800 dark:text-indigo-300';
 
   return (
-    <div className={`bg-white dark:bg-slate-900 rounded-xl shadow-sm overflow-hidden border transition-all ${isCanceled ? 'opacity-75' : ''} ${isBeingEdited ? 'border-amber-400 ring-2 ring-amber-300' : 'border-gray-200 dark:border-slate-700'}`}>
+    <div className={`bg-white dark:bg-slate-900 rounded-2xl shadow-sm shadow-gray-900/5 overflow-hidden border transition-all ${isCanceled ? 'opacity-75' : ''} ${isBeingEdited ? 'border-amber-400 ring-2 ring-amber-300' : 'border-gray-200 dark:border-slate-700'}`}>
 
       <div className="p-4 pb-3">
         <div className="flex justify-between items-start mb-2">
@@ -48,7 +48,7 @@ export default function ReservationCard({ res, now, editingId, onEdit, onDelete,
             {isScheduled && (
               <button onClick={() => onToggleAlarm(res.id)}
                 title={hasAlarm ? '알림 해제' : '알림 설정'}
-                className={`text-lg transition-all ${hasAlarm ? 'text-blue-500' : 'text-gray-300 dark:text-slate-600 hover:text-blue-400'}`}>
+                className={`text-lg transition-all ${hasAlarm ? 'text-indigo-500' : 'text-gray-300 dark:text-slate-600 hover:text-indigo-400'}`}>
                 {hasAlarm ? '🔔' : '🔕'}
               </button>
             )}
@@ -65,7 +65,7 @@ export default function ReservationCard({ res, now, editingId, onEdit, onDelete,
               {res.origin} <span className="text-gray-400 dark:text-slate-500 font-normal text-base">→</span> {res.destination}
             </div>
             <div className="text-2xl font-extrabold text-gray-900 dark:text-slate-100 tracking-tight mt-0.5">
-              {res.date} <span className="text-blue-600 dark:text-blue-400 text-xl">{res.time}</span>
+              {res.date} <span className="text-indigo-600 dark:text-indigo-400 text-xl">{res.time}</span>
             </div>
             {res.price > 0 && (
               <div className="text-gray-500 dark:text-slate-400 text-sm mt-0.5">{fmtMoney(res.price)}</div>
@@ -75,7 +75,7 @@ export default function ReservationCard({ res, now, editingId, onEdit, onDelete,
             <span className={`shrink-0 ml-3 text-sm font-extrabold px-3 py-1 rounded-full ${
               dday === 'D-day' ? 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300' :
               dday.includes('분') || dday.includes('시간') ? 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300' :
-              'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300'}`}>
+              'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300'}`}>
               {dday}
             </span>
           )}
@@ -161,14 +161,14 @@ export default function ReservationCard({ res, now, editingId, onEdit, onDelete,
 
       {!isCanceled && (
         <button onClick={() => onToggleExpand(res.id)}
-          className="w-full flex items-center justify-center gap-1 py-2.5 bg-blue-50/50 dark:bg-blue-900/10 border-t border-blue-100 dark:border-blue-900/40 text-sm font-bold text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
+          className="w-full flex items-center justify-center gap-1 py-2.5 bg-indigo-50/50 dark:bg-indigo-900/10 border-t border-indigo-100 dark:border-indigo-900/40 text-sm font-bold text-indigo-700 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors">
           구간별 취소 수수료 {res.isExpanded ? '▴' : '▾'}
         </button>
       )}
 
       {res.isExpanded && !isCanceled && (
         <div className="p-4 bg-gray-50/80 dark:bg-slate-800/50 border-t border-gray-100 dark:border-slate-700">
-          <div className="relative border-l-2 border-blue-200 dark:border-blue-800 ml-3 space-y-5">
+          <div className="relative border-l-2 border-indigo-200 dark:border-indigo-800 ml-3 space-y-5">
             {timeline.map((tier, index) => {
               const isTimePast = tier.untilTime && tier.untilTime < now;
               const feeFmt = fmtFee(tier.actualFee, res.price);

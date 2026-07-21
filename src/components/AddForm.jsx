@@ -8,7 +8,7 @@ const Loader = () => (
   <span className="animate-spin inline-block text-2xl">⟳</span>
 );
 
-const inputCls = "w-full p-2.5 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500";
+const inputCls = "w-full p-2.5 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500";
 const labelCls = "block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-1";
 
 export default function AddForm({
@@ -32,7 +32,7 @@ export default function AddForm({
   const schedule = getSchedule(vendorType, origin, destination) ?? [];
 
   return (
-    <section className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden">
+    <section className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm shadow-gray-900/5 border border-gray-200/70 dark:border-slate-700/70 overflow-hidden">
       {editingId && (
         <div className="flex items-center justify-between bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800 px-4 py-2.5">
           <span className="text-sm font-bold text-amber-800 dark:text-amber-300">예매 수정 중</span>
@@ -45,13 +45,13 @@ export default function AddForm({
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={isAnalyzing}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl py-5 flex flex-col items-center gap-2 transition-colors shadow-sm">
+            className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white rounded-xl py-5 flex flex-col items-center gap-2 transition-colors shadow-sm">
             {isAnalyzing
               ? <><Loader /><span className="font-bold text-base">분석 중...</span></>
               : <>
                   <span className="text-3xl">📷</span>
                   <span className="font-bold text-base">승차권 캡처로 등록하기</span>
-                  <span className="text-blue-200 text-xs">이미지를 업로드하면 예매 정보를 자동으로 채워드려요</span>
+                  <span className="text-indigo-200 text-xs">이미지를 업로드하면 예매 정보를 자동으로 채워드려요</span>
                 </>
             }
           </button>
@@ -88,7 +88,7 @@ export default function AddForm({
           ))}
           {previewDataList.length > 1 && (
             <button onClick={onApplyAllPreviewItems}
-              className="w-full bg-blue-700 text-white font-bold py-3 rounded-xl hover:bg-blue-800 text-sm shadow">
+              className="w-full bg-indigo-700 text-white font-bold py-3 rounded-xl hover:bg-indigo-800 text-sm shadow">
               {previewDataList.length}건 모두 등록하기
             </button>
           )}
@@ -116,7 +116,7 @@ export default function AddForm({
                 <button key={t.id} type="button" onClick={() => setVendorType(t.id)}
                   className={`py-2.5 text-sm rounded-lg border flex flex-col items-center gap-1 transition-all ${
                     vendorType === t.id
-                      ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-500 text-blue-700 dark:text-blue-300 font-bold ring-1 ring-blue-500'
+                      ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-500 text-indigo-700 dark:text-indigo-300 font-bold ring-1 ring-indigo-500'
                       : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-600 text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700'
                   }`}>
                   <span>{t.icon}</span><span>{t.label}</span>
@@ -138,7 +138,7 @@ export default function AddForm({
               <button type="button" onClick={() => setStationModal('origin')}
                 className={`flex-1 p-2.5 border rounded-lg text-sm text-left transition-all ${
                   origin
-                    ? 'border-blue-400 dark:border-blue-600 text-blue-800 dark:text-blue-300 font-semibold bg-blue-50 dark:bg-blue-900/20'
+                    ? 'border-indigo-400 dark:border-indigo-600 text-indigo-800 dark:text-indigo-300 font-semibold bg-indigo-50 dark:bg-indigo-900/20'
                     : 'border-gray-300 dark:border-slate-600 text-gray-400 dark:text-slate-500 bg-white dark:bg-slate-800'}`}>
                 {origin || '출발역 선택'}
               </button>
@@ -146,7 +146,7 @@ export default function AddForm({
                 type="button"
                 onClick={() => { const tmp = origin; setOrigin(destination); setDestination(tmp); }}
                 title="출발지/도착지 바꾸기"
-                className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-500 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-400 hover:text-blue-600 transition-all text-sm font-bold">
+                className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-500 dark:text-slate-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:border-indigo-400 hover:text-indigo-600 transition-all text-sm font-bold">
                 ⇄
               </button>
               <button type="button" onClick={() => setStationModal('destination')}
@@ -166,9 +166,9 @@ export default function AddForm({
             {savedRoutes.length > 0 && (
               <div className="mt-2 flex gap-1.5 flex-wrap">
                 {savedRoutes.map(route => (
-                  <div key={route.id} className="flex items-center gap-1 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-full px-3 py-1">
-                    <button type="button" onClick={() => onApplyRoute(route)} className="text-xs font-semibold text-blue-700 dark:text-blue-300">
-                      {route.vendorName && <span className="text-blue-400 dark:text-blue-500 mr-1">{route.vendorName}</span>}
+                  <div key={route.id} className="flex items-center gap-1 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-full px-3 py-1">
+                    <button type="button" onClick={() => onApplyRoute(route)} className="text-xs font-semibold text-indigo-700 dark:text-indigo-300">
+                      {route.vendorName && <span className="text-indigo-400 dark:text-indigo-500 mr-1">{route.vendorName}</span>}
                       {route.label}
                     </button>
                     <button type="button" onClick={() => onDeleteRoute(route.id)} className="text-gray-300 dark:text-slate-600 hover:text-red-400 ml-1 text-xs">✕</button>
@@ -194,8 +194,8 @@ export default function AddForm({
                     onClick={() => { setTime(train.dep); if (train.arr) setArrivalTime(train.arr); else setArrivalTime(''); }}
                     className={`py-2 px-1 rounded-lg border text-center transition-all ${
                       isSelected
-                        ? 'bg-blue-600 border-blue-600 text-white font-bold shadow-sm'
-                        : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-600 text-gray-700 dark:text-slate-300 hover:border-blue-400 dark:hover:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20'
+                        ? 'bg-indigo-600 border-indigo-600 text-white font-bold shadow-sm'
+                        : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-600 text-gray-700 dark:text-slate-300 hover:border-indigo-400 dark:hover:border-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20'
                     }`}>
                     <div className="text-xs font-bold">{train.dep}</div>
                     {train.arr && <div className="text-[10px] text-current opacity-70">→{train.arr}</div>}
@@ -204,7 +204,7 @@ export default function AddForm({
               })}
             </div>
             {time && (
-              <p className="text-xs text-blue-600 dark:text-blue-400 mt-1.5 font-semibold">
+              <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-1.5 font-semibold">
                 선택됨: {time}{arrivalTime ? ` → ${arrivalTime}` : ''}
                 <button type="button" onClick={() => { setTime(''); setArrivalTime(''); }}
                   className="ml-2 text-gray-400 dark:text-slate-500 hover:text-red-400 font-normal">✕ 초기화</button>
@@ -228,7 +228,7 @@ export default function AddForm({
 
           <button type="submit"
             className={`w-full text-white font-bold py-3.5 rounded-lg transition-colors shadow-sm ${
-              editingId ? 'bg-amber-500 hover:bg-amber-600' : 'bg-blue-600 hover:bg-blue-700'
+              editingId ? 'bg-amber-500 hover:bg-amber-600' : 'bg-indigo-600 hover:bg-indigo-700'
             }`}>
             {editingId ? '수정 완료' : '예매 등록'}
           </button>

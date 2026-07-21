@@ -8,26 +8,26 @@ function TransportRules() {
 
   return (
     <div className="space-y-4">
-      <div className="flex bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-1">
+      <div className="flex bg-white dark:bg-slate-900 rounded-2xl shadow-sm shadow-gray-900/5 border border-gray-200/70 dark:border-slate-700/70 p-1">
         {[
           { id: 'ktx', label: '🚆 KTX' },
           { id: 'srt', label: '🚄 SRT' },
           { id: 'bus', label: '🚌 시외/고속' },
         ].map(v => (
           <button key={v.id} onClick={() => setActiveVendor(v.id)}
-            className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${activeVendor === v.id ? 'bg-blue-600 text-white shadow' : 'text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800'}`}>
+            className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${activeVendor === v.id ? 'bg-indigo-600 text-white shadow' : 'text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800'}`}>
             {v.label}
           </button>
         ))}
       </div>
 
-      <div className="bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 p-4 rounded-xl border border-blue-100 dark:border-blue-800">
+      <div className="bg-indigo-50 dark:bg-indigo-900/20 text-indigo-800 dark:text-indigo-300 p-4 rounded-xl border border-indigo-100 dark:border-indigo-800">
         <p className="text-sm leading-relaxed font-medium">
           일반승차권 기준입니다. 명절·단체 승차권은 별도 규정이 적용됩니다. 출발 후 취소는 역 창구에서만 가능합니다.
         </p>
       </div>
 
-      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm shadow-gray-900/5 border border-gray-200/70 dark:border-slate-700/70 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left text-gray-600 dark:text-slate-400">
             <thead className="text-xs text-gray-700 dark:text-slate-300 bg-gray-100 dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700">
@@ -41,8 +41,8 @@ function TransportRules() {
               {[...vendor.rules].sort((a, b) => b.hoursBefore - a.hoursBefore).map((rule, i) => (
                 <tr key={i} className="hover:bg-gray-50 dark:hover:bg-slate-800/50">
                   <td className="px-4 py-3 font-medium text-gray-900 dark:text-slate-100 bg-gray-50/50 dark:bg-slate-800/30">{rule.label}</td>
-                  <td className={`px-4 py-3 font-bold ${rule.fee === '무료' || rule.fee === '0%' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-slate-300'}`}>{rule.fee}</td>
-                  <td className={`px-4 py-3 font-bold ${!rule.weekendFee || rule.weekendFee === '무료' || rule.weekendFee === '0%' ? 'text-blue-600 dark:text-blue-400' : 'text-red-500 dark:text-red-400'}`}>{rule.weekendFee || rule.fee}</td>
+                  <td className={`px-4 py-3 font-bold ${rule.fee === '무료' || rule.fee === '0%' ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-700 dark:text-slate-300'}`}>{rule.fee}</td>
+                  <td className={`px-4 py-3 font-bold ${!rule.weekendFee || rule.weekendFee === '무료' || rule.weekendFee === '0%' ? 'text-indigo-600 dark:text-indigo-400' : 'text-red-500 dark:text-red-400'}`}>{rule.weekendFee || rule.fee}</td>
                 </tr>
               ))}
               {vendor.postRules && (
@@ -93,7 +93,7 @@ function ExamRules() {
           <button key={e.id} onClick={() => setActiveExam(e.id)}
             className={`py-2.5 px-1 text-xs rounded-xl border font-semibold transition-all ${
               activeExam === e.id
-                ? 'bg-blue-600 border-blue-600 text-white shadow'
+                ? 'bg-indigo-600 border-indigo-600 text-white shadow'
                 : 'bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800'
             }`}>
             {e.name}
@@ -107,11 +107,11 @@ function ExamRules() {
         </div>
       )}
 
-      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm shadow-gray-900/5 border border-gray-200/70 dark:border-slate-700/70 overflow-hidden">
         <div className="px-4 py-3 bg-gray-50 dark:bg-slate-800 border-b border-gray-100 dark:border-slate-700">
           <span className="text-xs font-bold text-gray-600 dark:text-slate-300">취소 수수료 구간</span>
           {exam.requiresRegDeadline && (
-            <span className="ml-2 text-xs text-blue-600 dark:text-blue-400 font-medium">({exam.regDeadlineLabel} 입력 필요)</span>
+            <span className="ml-2 text-xs text-indigo-600 dark:text-indigo-400 font-medium">({exam.regDeadlineLabel} 입력 필요)</span>
           )}
         </div>
         <table className="w-full text-sm text-left text-gray-600 dark:text-slate-400">
@@ -160,13 +160,13 @@ export default function RulesTab() {
 
   return (
     <section className="space-y-4 mt-4">
-      <div className="flex bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-1">
+      <div className="flex bg-white dark:bg-slate-900 rounded-2xl shadow-sm shadow-gray-900/5 border border-gray-200/70 dark:border-slate-700/70 p-1">
         {[
           { id: 'transport', label: '🚆 교통수단' },
           { id: 'exam',      label: '📝 시험' },
         ].map(d => (
           <button key={d.id} onClick={() => setDomain(d.id)}
-            className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${domain === d.id ? 'bg-blue-600 text-white shadow' : 'text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800'}`}>
+            className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${domain === d.id ? 'bg-indigo-600 text-white shadow' : 'text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800'}`}>
             {d.label}
           </button>
         ))}
