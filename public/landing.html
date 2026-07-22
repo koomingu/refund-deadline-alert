@@ -139,11 +139,22 @@
   }
   .opts button:hover { border-color: var(--indigo); }
   .opts button.sel { background: var(--indigo); border-color: var(--indigo); color: #fff; }
+  .survey-intro { font-size: 13.5px; font-weight: 800; color: var(--indigo-deep); }
   .survey [data-survey-submit] { align-self: flex-start; padding: 10px 20px; }
   .survey-skip { font-size: 12.5px; color: var(--ink-faint); cursor: pointer; text-align: center; }
   .survey-skip:hover { color: var(--ink-soft); text-decoration: underline; }
-  .survey-done { display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(15,157,120,.22); font-size: 14px; font-weight: 700; color: var(--mint); }
-  .survey-done.show { display: block; }
+
+  /* 자가 체크 결과 */
+  .result { display: none; margin-top: 18px; padding-top: 18px; border-top: 1px solid rgba(15,157,120,.22); }
+  .result.show { display: block; animation: fadeInUp .5s cubic-bezier(.16,1,.3,1); }
+  .result .r-badge { display: inline-block; font-size: 12px; font-weight: 800; padding: 5px 12px; border-radius: 999px; margin-bottom: 11px; }
+  .result .r-title { font-size: 18px; font-weight: 800; letter-spacing: -.02em; margin-bottom: 9px; line-height: 1.35; }
+  .result .r-desc { font-size: 14px; color: var(--ink-soft); }
+  .result .r-desc b { color: var(--ink); }
+  .result.high .r-badge { background: rgba(225,29,72,.12); color: var(--rose); }
+  .result.mid  .r-badge { background: rgba(217,119,6,.15); color: var(--amber); }
+  .result.low  .r-badge { background: rgba(15,157,120,.14); color: var(--mint); }
+  @keyframes fadeInUp { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform:none; } }
 
   /* ── Section base ── */
   section.block { padding: 84px 0; }
@@ -320,12 +331,13 @@
           <div class="check">✓</div>
           <div>
             <b>신청 완료! 가장 먼저 초대해드릴게요.</b>
-            <p>1분만 더 답해주시면 서비스에 큰 도움이 돼요 🙏</p>
+            <p>30초 자가 체크로 내 수수료 위험도를 확인해보세요 👇</p>
           </div>
         </div>
         <div class="survey" data-survey>
+          <p class="survey-intro">🩺 30초 자가 체크 — 나는 취소 수수료 안전할까?</p>
           <div class="q">
-            <p class="q-label">Q1. 기차·버스 예매를 취소하다 취소 수수료로 손해 본 적 있나요?</p>
+            <p class="q-label">Q1. 기차·버스를 취소하다 취소 수수료로 손해 본 적 있나요?</p>
             <div class="opts" data-q="경험여부">
               <button type="button" data-v="있다">있다</button>
               <button type="button" data-v="없다">없다</button>
@@ -340,10 +352,18 @@
               <button type="button" data-v="해당 없음">해당 없음</button>
             </div>
           </div>
-          <button type="button" class="btn" data-survey-submit>설문 제출</button>
+          <div class="q">
+            <p class="q-label">Q3. 기차·버스를 얼마나 자주 이용하세요?</p>
+            <div class="opts" data-q="이용빈도">
+              <button type="button" data-v="자주">자주</button>
+              <button type="button" data-v="가끔">가끔</button>
+              <button type="button" data-v="거의 안 함">거의 안 함</button>
+            </div>
+          </div>
+          <button type="button" class="btn" data-survey-submit>결과 확인하기</button>
           <p class="survey-skip" data-survey-skip>건너뛰기</p>
         </div>
-        <div class="survey-done" data-survey-done>고맙습니다! 큰 도움이 됐어요 🙌</div>
+        <div class="result" data-result></div>
       </div>
       <div class="trust">
         <span>✅ 설치 없이 웹에서 바로</span>
@@ -564,12 +584,13 @@
           <div class="check">✓</div>
           <div>
             <b>신청 완료! 가장 먼저 초대해드릴게요.</b>
-            <p>1분만 더 답해주시면 서비스에 큰 도움이 돼요 🙏</p>
+            <p>30초 자가 체크로 내 수수료 위험도를 확인해보세요 👇</p>
           </div>
         </div>
         <div class="survey" data-survey>
+          <p class="survey-intro">🩺 30초 자가 체크 — 나는 취소 수수료 안전할까?</p>
           <div class="q">
-            <p class="q-label">Q1. 기차·버스 예매를 취소하다 취소 수수료로 손해 본 적 있나요?</p>
+            <p class="q-label">Q1. 기차·버스를 취소하다 취소 수수료로 손해 본 적 있나요?</p>
             <div class="opts" data-q="경험여부">
               <button type="button" data-v="있다">있다</button>
               <button type="button" data-v="없다">없다</button>
@@ -584,10 +605,18 @@
               <button type="button" data-v="해당 없음">해당 없음</button>
             </div>
           </div>
-          <button type="button" class="btn" data-survey-submit>설문 제출</button>
+          <div class="q">
+            <p class="q-label">Q3. 기차·버스를 얼마나 자주 이용하세요?</p>
+            <div class="opts" data-q="이용빈도">
+              <button type="button" data-v="자주">자주</button>
+              <button type="button" data-v="가끔">가끔</button>
+              <button type="button" data-v="거의 안 함">거의 안 함</button>
+            </div>
+          </div>
+          <button type="button" class="btn" data-survey-submit>결과 확인하기</button>
           <p class="survey-skip" data-survey-skip>건너뛰기</p>
         </div>
-        <div class="survey-done" data-survey-done>고맙습니다! 큰 도움이 됐어요 🙌</div>
+        <div class="result" data-result></div>
       </div>
     </div>
   </div>
@@ -660,7 +689,29 @@
     });
   });
 
-  // 미니 설문 처리
+  // 자가 체크 결과 계산
+  function computeResult(a) {
+    const exp = a['경험여부'], cause = a['놓친원인'], freq = a['이용빈도'];
+    if (exp === '있다') {
+      if (cause === '몰라서 놓쳤다') {
+        return { type: '수수료 위험군', cls: 'high', badge: '🔴 수수료 위험군',
+          title: '이미 몰라서 손해를 보신 적이 있어요',
+          desc: '수수료가 오르는 걸 <b>몰라서</b> 돈을 잃으셨네요. 알림 한 번이면 아낄 수 있던 돈이에요. <b>지금이 딱 필요한 타이밍</b>이에요.' };
+      }
+      return { type: '주의군', cls: 'mid', badge: '🟡 주의군',
+        title: '손해 경험이 있으신 만큼, 다음엔 놓치지 마세요',
+        desc: '한 번 겪어보셨다면 다음에도 반복되기 쉬워요. 지킴이가 <b>수수료 오르기 전에 대신 챙겨드릴게요.</b>' };
+    }
+    if (freq === '자주' || freq === '가끔') {
+      return { type: '잠재 위험군', cls: 'mid', badge: '🟡 잠재 위험군',
+        title: '자주 이용하시는 만큼, 한 번의 방심이 위험해요',
+        desc: '아직 손해는 없지만, 취소 수수료는 표값의 <b>최대 15%</b>. 자주 타실수록 놓칠 확률도 높아요. <b>미리 대비해두세요.</b>' };
+    }
+    return { type: '예방 추천', cls: 'low', badge: '🟢 예방 추천',
+      title: '아직은 안전하지만, 한 번이면 수만 원이에요',
+      desc: '취소 수수료는 단 한 번의 실수로 큰돈이 나갈 수 있어요. <b>만약을 위해 지킴이를 곁에 두세요.</b>' };
+  }
+
   document.querySelectorAll('[data-survey]').forEach(survey => {
     const answers = {};
     survey.querySelectorAll('.opts').forEach(group => {
@@ -674,13 +725,24 @@
       });
     });
     const successBox = survey.closest('[data-success]');
-    const done = successBox.querySelector('[data-survey-done]');
+    const resultBox = successBox.querySelector('[data-result]');
     const submitBtn = survey.querySelector('[data-survey-submit]');
-    const finish = () => { survey.classList.add('hide'); done.classList.add('show'); };
+
+    const showResult = (sent) => {
+      const r = computeResult(answers);
+      resultBox.className = 'result ' + r.cls + ' show';
+      resultBox.innerHTML =
+        '<span class="r-badge">' + r.badge + '</span>' +
+        '<div class="r-title">' + r.title + '</div>' +
+        '<p class="r-desc">' + r.desc + '</p>';
+      survey.classList.add('hide');
+      return r;
+    };
 
     submitBtn.addEventListener('click', async () => {
       submitBtn.disabled = true;
-      submitBtn.textContent = '제출 중…';
+      submitBtn.textContent = '분석 중…';
+      const r = showResult();
       try {
         await fetch('https://formsubmit.co/ajax/' + FORM_EMAIL, {
           method: 'POST',
@@ -690,14 +752,15 @@
             유입경로: source,
             경험여부: answers['경험여부'] || '(무응답)',
             놓친원인: answers['놓친원인'] || '(무응답)',
-            _subject: '[취소 수수료 지킴이] 설문 응답 📝',
+            이용빈도: answers['이용빈도'] || '(무응답)',
+            진단결과: r.type,
+            _subject: '[취소 수수료 지킴이] 자가 체크 응답 📝',
             _template: 'table',
           }),
         });
       } catch (_) {}
-      finish();
     });
-    survey.querySelector('[data-survey-skip]').addEventListener('click', finish);
+    survey.querySelector('[data-survey-skip]').addEventListener('click', () => survey.classList.add('hide'));
   });
 
   // nav 스크롤 테두리
