@@ -28,13 +28,17 @@ export default function ReservationCard({ res, now, editingId, onEdit, onDelete,
     '놓침':    'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300',
   }[res.status] ?? 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-800 dark:text-indigo-300';
 
+  const vendorIcon = { ktx: '🚆', srt: '🚄', bus: '🚌' }[res.vendorType] ?? '🚆';
+
   return (
-    <div className={`bg-white dark:bg-slate-900 rounded-2xl shadow-sm shadow-gray-900/5 overflow-hidden border transition-all ${isCanceled ? 'opacity-75' : ''} ${isBeingEdited ? 'border-amber-400 ring-2 ring-amber-300' : 'border-gray-200 dark:border-slate-700'}`}>
+    <div className={`group bg-white dark:bg-slate-900 rounded-2xl shadow-sm shadow-gray-900/5 overflow-hidden border transition-all duration-200 hover:shadow-md hover:shadow-gray-900/10 hover:-translate-y-0.5 ${isCanceled ? 'opacity-75' : ''} ${isBeingEdited ? 'border-amber-400 ring-2 ring-amber-300' : 'border-gray-200/80 dark:border-slate-700/80'}`}>
 
       <div className="p-4 pb-3">
-        <div className="flex justify-between items-start mb-2">
+        <div className="flex justify-between items-start mb-2.5">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-bold text-gray-800 dark:text-slate-100">{res.vendorName}</span>
+            <span className="inline-flex items-center gap-1.5 text-sm font-bold text-gray-800 dark:text-slate-100 bg-gray-100 dark:bg-slate-800 rounded-lg px-2 py-1">
+              <span className="text-sm">{vendorIcon}</span>{res.vendorName}
+            </span>
             {res.title && <span className="text-xs text-gray-400 dark:text-slate-500 font-medium">{res.title}</span>}
           </div>
           <div className="flex gap-1.5 items-center shrink-0 ml-2">

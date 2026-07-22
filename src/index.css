@@ -2,12 +2,40 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --ground: #f4f4f8;
+  --ambient-1: rgba(99, 102, 241, 0.10);
+  --ambient-2: rgba(168, 85, 247, 0.07);
+}
+:root.dark {
+  --ground: #0a0a10;
+  --ambient-1: rgba(99, 102, 241, 0.14);
+  --ambient-2: rgba(88, 28, 135, 0.12);
+}
+
+body {
+  background-color: var(--ground);
+  background-image:
+    radial-gradient(60rem 40rem at 110% -10%, var(--ambient-1), transparent 60%),
+    radial-gradient(50rem 40rem at -10% 10%, var(--ambient-2), transparent 55%);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+
 @keyframes fadeInDown {
   from { opacity: 0; transform: translateY(-10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 .animate-fade-in-down {
   animation: fadeInDown 0.3s ease-out forwards;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up {
+  animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* 다크모드에서 날짜/시간 입력 칸을 시스템 다크 스타일로 */

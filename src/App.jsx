@@ -493,10 +493,22 @@ export default function App() {
   }, [cancelTargetId, cancelDate, cancelTime, reservations]);
 
   const TABS = [
-    { id: 'reservations', label: '내 예매 관리', badge: upcomingCount > 0 ? upcomingCount : null },
-    { id: 'rules',        label: '수수료 규정 요약표' },
-    { id: 'settings',     label: '설정' },
+    { id: 'reservations', label: '내 예매 관리', icon: '🎟️', badge: upcomingCount > 0 ? upcomingCount : null },
+    { id: 'rules',        label: '수수료 규정',   icon: '📋' },
+    { id: 'settings',     label: '설정',          icon: '⚙️' },
   ];
+
+  const PAGE_META = {
+    reservations: { title: '내 예매 관리', desc: '등록한 여정의 취소 수수료를 실시간으로 지켜봐요.' },
+    rules:        { title: '수수료 규정 요약표', desc: '교통수단·시험별 취소 수수료 구간을 한눈에 확인해요.' },
+    settings:     { title: '설정', desc: '알림 간격, 즐겨찾기 노선, API 키를 관리해요.' },
+  };
+
+  const completedCount = reservations.filter(r => r.status === '이용완료').length;
+  const canceledCount  = reservations.filter(r => r.status === '취소함' || r.status === '놓침').length;
+  const savedAmount = reservations
+    .filter(r => r.cancelInfo?.isAlarmHelped)
+    .reduce((sum, r) => sum + (r.price || 0) - (r.cancelInfo?.feeAmount || 0), 0);
 
   const FormPanel = (
     <div className="space-y-4 lg:sticky lg:top-6">
@@ -555,15 +567,20 @@ export default function App() {
   );
 
   const CardListPanel = (
-    <section className="space-y-4">
-      <h2 className="text-base font-bold px-1 text-gray-700 dark:text-slate-300">
-        등록된 여정 <span className="text-indigo-600 dark:text-indigo-400">({reservations.length})</span>
-      </h2>
+    <section className="space-y-3.5">
+      <div className="flex items-center justify-between px-1">
+        <h2 className="text-sm font-bold text-gray-500 dark:text-slate-400 tracking-wide uppercase">
+          등록된 여정
+        </h2>
+        <span className="text-xs font-bold text-gray-400 dark:text-slate-500 bg-white/70 dark:bg-slate-800/70 border border-gray-200/70 dark:border-slate-700/70 rounded-full px-2.5 py-0.5">
+          총 {reservations.length}건
+        </span>
+      </div>
       {reservations.length === 0 && (
-        <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-2xl shadow-sm shadow-gray-900/5 border border-gray-200/70 dark:border-slate-700/70">
-          <div className="text-5xl mb-3">📅</div>
-          <p className="font-semibold text-gray-500 dark:text-slate-400">등록된 예매 내역이 없습니다.</p>
-          <p className="text-sm mt-1 text-gray-400 dark:text-slate-500">캡처 이미지로 예매를 추가해보세요.</p>
+        <div className="text-center py-20 bg-white/60 dark:bg-slate-900/50 rounded-2xl border border-dashed border-gray-300/80 dark:border-slate-700">
+          <div className="text-5xl mb-3 opacity-80">🎫</div>
+          <p className="font-bold text-gray-600 dark:text-slate-300">아직 등록된 여정이 없어요</p>
+          <p className="text-sm mt-1 text-gray-400 dark:text-slate-500">왼쪽에서 승차권을 등록하면 여기에 표시돼요.</p>
         </div>
       )}
       {sortedReservations.map(res =>
@@ -581,41 +598,43 @@ export default function App() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-slate-100 font-sans lg:flex">
+    <div className="min-h-screen text-gray-900 dark:text-slate-100 font-sans lg:flex">
 
       {/* ── 사이드바 (lg+) ── */}
-      <aside className="hidden lg:flex lg:flex-col lg:w-60 lg:fixed lg:inset-y-0 bg-white dark:bg-slate-900 border-r border-gray-200/70 dark:border-slate-800 z-20">
+      <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border-r border-gray-200/60 dark:border-slate-800/80 z-20">
         <div className="px-6 py-7 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center text-white text-base shadow-sm shadow-indigo-500/30 shrink-0">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-500 via-indigo-600 to-violet-600 flex items-center justify-center text-white text-lg shadow-lg shadow-indigo-500/30 shrink-0">
             🎫
           </div>
           <div className="leading-tight">
-            <div className="text-[11px] font-bold text-indigo-500 dark:text-indigo-400 tracking-wide">취소 수수료</div>
-            <h1 className="text-[15px] font-extrabold text-gray-900 dark:text-white -mt-0.5">지킴이</h1>
+            <div className="text-[10.5px] font-bold text-indigo-500 dark:text-indigo-400 tracking-[0.12em] uppercase">Refund Guard</div>
+            <h1 className="text-[15px] font-extrabold text-gray-900 dark:text-white -mt-0.5">취소 수수료 지킴이</h1>
           </div>
         </div>
-        <nav className="flex-1 px-3.5 pt-2 space-y-1 overflow-y-auto">
+        <nav className="flex-1 px-3.5 pt-3 space-y-1 overflow-y-auto">
+          <p className="px-3 pb-1.5 text-[10.5px] font-bold text-gray-400 dark:text-slate-600 tracking-widest uppercase">메뉴</p>
           {TABS.map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className={`relative w-full flex items-center justify-between pl-4 pr-3 py-2.5 rounded-xl text-[13.5px] font-semibold transition-all text-left ${
+              className={`relative w-full flex items-center gap-3 pl-4 pr-3 py-2.5 rounded-xl text-[13.5px] font-semibold transition-all text-left ${
                 activeTab === tab.id
-                  ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300'
-                  : 'text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800/60 hover:text-gray-800 dark:hover:text-slate-200'
+                  ? 'bg-gradient-to-r from-indigo-50 to-violet-50 dark:from-indigo-500/15 dark:to-violet-500/10 text-indigo-700 dark:text-indigo-300 shadow-sm shadow-indigo-500/5'
+                  : 'text-gray-500 dark:text-slate-400 hover:bg-gray-100/70 dark:hover:bg-slate-800/60 hover:text-gray-800 dark:hover:text-slate-200'
               }`}>
               {activeTab === tab.id && (
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-4 rounded-full bg-indigo-600" />
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full bg-gradient-to-b from-indigo-500 to-violet-500" />
               )}
-              <span>{tab.label}</span>
+              <span className="text-base w-5 text-center">{tab.icon}</span>
+              <span className="flex-1">{tab.label}</span>
               {tab.badge && (
                 <span className="bg-indigo-600 text-white text-[11px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center leading-none">{tab.badge}</span>
               )}
             </button>
           ))}
         </nav>
-        <div className="px-4 py-4 mx-3.5 mb-3 border-t border-gray-100 dark:border-slate-800">
+        <div className="px-4 pb-5 pt-3">
           <button onClick={() => setDarkMode(d => !d)}
             title={darkMode ? '라이트 모드로 전환' : '다크 모드로 전환'}
-            className="w-full flex items-center justify-center gap-2 mt-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-gray-500 dark:text-slate-400 bg-gray-50 dark:bg-slate-800/60 hover:bg-gray-100 dark:hover:bg-slate-800 transition-all">
+            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-[13px] font-semibold text-gray-500 dark:text-slate-400 bg-gray-100/70 dark:bg-slate-800/60 hover:bg-gray-200/70 dark:hover:bg-slate-800 transition-all">
             <span className="text-base">{darkMode ? '☀️' : '🌙'}</span>
             <span>{darkMode ? '라이트 모드' : '다크 모드'}</span>
           </button>
@@ -623,13 +642,14 @@ export default function App() {
       </aside>
 
       {/* ── 모바일 헤더 ── */}
-      <header className="lg:hidden bg-gradient-to-br from-indigo-600 to-indigo-800 dark:from-slate-900 dark:to-slate-900 dark:border-b dark:border-slate-800 text-white p-4 shadow-md sticky top-0 z-10">
+      <header className="lg:hidden bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-700 dark:from-slate-900 dark:via-slate-900 dark:to-slate-900 dark:border-b dark:border-slate-800 text-white px-4 pt-4 pb-3 shadow-lg shadow-indigo-900/10 sticky top-0 z-10">
         <div className="flex items-center justify-between mb-3">
-          <h1 className="text-[17px] font-extrabold flex items-center gap-1.5">
-            <span className="text-lg">🎫</span> 취소 수수료 지킴이
+          <h1 className="text-[17px] font-extrabold flex items-center gap-2">
+            <span className="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center text-base">🎫</span>
+            취소 수수료 지킴이
           </h1>
           <button onClick={() => setDarkMode(d => !d)}
-            className="text-indigo-200 dark:text-slate-400 hover:text-white text-lg w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors">
+            className="text-indigo-100 dark:text-slate-400 hover:text-white text-lg w-9 h-9 flex items-center justify-center rounded-xl hover:bg-white/10 transition-colors">
             {darkMode ? '☀️' : '🌙'}
           </button>
         </div>
@@ -639,6 +659,7 @@ export default function App() {
               className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1 ${
                 activeTab === tab.id ? 'bg-white dark:bg-slate-700 text-indigo-700 dark:text-white shadow' : 'text-indigo-100 hover:text-white'
               }`}>
+              <span className="hidden xs:inline">{tab.icon}</span>
               {tab.label}
               {tab.badge && <span className="bg-indigo-500 text-white text-[10px] font-bold px-1 rounded-full">{tab.badge}</span>}
             </button>
@@ -647,24 +668,48 @@ export default function App() {
       </header>
 
       {/* ── 메인 콘텐츠 ── */}
-      <main className="lg:pl-60 flex-1 min-h-screen pb-20">
-        <div className="p-4 lg:p-6">
+      <main className="lg:pl-64 flex-1 min-h-screen pb-20">
+        <div className="max-w-6xl mx-auto px-4 lg:px-8 pt-6 lg:pt-9" key={activeTab}>
+
+          {/* 페이지 헤더 */}
+          <div className="mb-6 animate-fade-in-up">
+            <h2 className="text-2xl lg:text-[28px] font-extrabold text-gray-900 dark:text-white tracking-tight">
+              {PAGE_META[activeTab].title}
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">{PAGE_META[activeTab].desc}</p>
+
+            {activeTab === 'reservations' && reservations.length > 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5">
+                {[
+                  { label: '예정', value: upcomingCount, tone: 'text-indigo-600 dark:text-indigo-400' },
+                  { label: '이용완료', value: completedCount, tone: 'text-gray-700 dark:text-slate-200' },
+                  { label: '취소·놓침', value: canceledCount, tone: 'text-gray-700 dark:text-slate-200' },
+                  { label: '알림으로 아낀 금액', value: savedAmount > 0 ? `${savedAmount.toLocaleString('ko-KR')}원` : '0원', tone: 'text-green-600 dark:text-green-400' },
+                ].map(s => (
+                  <div key={s.label} className="bg-white/70 dark:bg-slate-900/60 backdrop-blur-sm rounded-2xl border border-gray-200/70 dark:border-slate-800 px-4 py-3.5 shadow-sm shadow-gray-900/5">
+                    <div className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 mb-1">{s.label}</div>
+                    <div className={`text-xl font-extrabold tracking-tight ${s.tone}`}>{s.value}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           {activeTab === 'reservations' && (
-            <div className="lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start space-y-5 lg:space-y-0">
+            <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-6 lg:items-start space-y-5 lg:space-y-0 animate-fade-in-up">
               {FormPanel}
               {CardListPanel}
             </div>
           )}
 
           {activeTab === 'rules' && (
-            <div className="lg:max-w-2xl">
+            <div className="lg:max-w-2xl animate-fade-in-up">
               <RulesTab />
             </div>
           )}
 
           {activeTab === 'settings' && (
-            <div className="lg:max-w-2xl">
+            <div className="lg:max-w-2xl animate-fade-in-up">
               <SettingsTab
                 alarmPresets={alarmPresets}
                 setAlarmPresets={setAlarmPresets}
@@ -709,9 +754,10 @@ export default function App() {
       )}
 
       {/* 토스트 */}
-      <div className="fixed top-4 right-4 flex flex-col gap-2 w-72 z-[100] pointer-events-none">
+      <div className="fixed top-4 right-4 left-4 sm:left-auto flex flex-col gap-2 sm:w-80 z-[100] pointer-events-none">
         {toasts.map(t => (
-          <div key={t.id} className="bg-gray-800/95 text-white text-sm font-semibold px-4 py-3 rounded-lg shadow-xl animate-fade-in-down pointer-events-auto border border-gray-700">
+          <div key={t.id} className="bg-slate-900/95 dark:bg-slate-800/95 backdrop-blur text-white text-sm font-semibold px-4 py-3.5 rounded-xl shadow-xl shadow-slate-900/20 animate-fade-in-down pointer-events-auto border border-slate-700/80 flex items-center gap-2.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0" />
             {t.message}
           </div>
         ))}
