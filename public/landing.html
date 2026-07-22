@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>취소 수수료 지킴이 — 놓친 환불, 이제 없어요</title>
+<meta name="description" content="KTX·SRT·버스 취소 수수료가 오르기 직전에 알려드려요. 설치 없이 무료. 대기자 신청하고 가장 먼저 써보세요." />
+<meta property="og:title" content="취소 수수료 지킴이" />
+<meta property="og:description" content="취소 수수료가 오르기 직전에 알림. 다시는 억울하게 돈 잃지 마세요." />
+<meta property="og:type" content="website" />
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+<link rel="stylesheet" as="style" crossorigin
+  href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css" />
+<style>
+  :root {
+    --ground: #faf9f7;
+    --surface: #ffffff;
+    --ink: #16161d;
+    --ink-soft: #55555f;
+    --ink-faint: #8a8a94;
+    --line: #ececf0;
+    --indigo: #4f46e5;
+    --indigo-deep: #4338ca;
+    --violet: #7c3aed;
+    --mint: #0f9d78;
+    --rose: #e11d48;
+    --amber: #d97706;
+    --radius: 20px;
+    --shadow: 0 1px 2px rgba(20,20,40,.04), 0 12px 32px -12px rgba(20,20,60,.12);
+    --shadow-lg: 0 2px 4px rgba(20,20,40,.05), 0 30px 60px -20px rgba(60,40,120,.22);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; scroll-behavior: smooth; }
+  body {
+    font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    background: var(--ground);
+    color: var(--ink);
+    line-height: 1.6;
+    letter-spacing: -0.01em;
+    overflow-x: hidden;
+  }
+  ::selection { background: rgba(79,70,229,.18); }
+  a { color: inherit; text-decoration: none; }
+  .wrap { width: 100%; max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+  /* ── Nav ── */
+  nav {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(250,249,247,.8);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid transparent;
+    transition: border-color .3s;
+  }
+  nav.scrolled { border-color: var(--line); }
+  .nav-inner { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+  .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 16px; }
+  .logo .mark {
+    width: 34px; height: 34px; border-radius: 11px;
+    background: linear-gradient(135deg, var(--indigo), var(--violet));
+    display: grid; place-items: center; font-size: 17px;
+    box-shadow: 0 6px 16px -4px rgba(79,70,229,.5);
+  }
+  .nav-links { display: flex; align-items: center; gap: 8px; }
+  .nav-links a.ghost { padding: 8px 14px; font-size: 14px; font-weight: 600; color: var(--ink-soft); border-radius: 10px; transition: background .2s; }
+  .nav-links a.ghost:hover { background: rgba(20,20,40,.05); }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    font-weight: 700; font-size: 14px; padding: 10px 18px; border-radius: 12px;
+    border: none; cursor: pointer; transition: transform .15s, box-shadow .2s, background .2s;
+    background: linear-gradient(135deg, var(--indigo), var(--violet)); color: #fff;
+    box-shadow: 0 8px 20px -8px rgba(79,70,229,.6);
+  }
+  .btn:hover { transform: translateY(-1px); box-shadow: 0 12px 26px -8px rgba(79,70,229,.7); }
+  .btn:active { transform: translateY(0); }
+  .btn.lg { font-size: 16px; padding: 15px 26px; border-radius: 14px; }
+
+  /* ── Hero ── */
+  .hero { position: relative; padding: 72px 0 88px; overflow: hidden; }
+  .hero::before {
+    content: ""; position: absolute; inset: 0; z-index: 0;
+    background:
+      radial-gradient(48rem 30rem at 82% -8%, rgba(124,58,237,.14), transparent 60%),
+      radial-gradient(40rem 30rem at 8% 4%, rgba(79,70,229,.12), transparent 58%);
+  }
+  .hero .wrap { position: relative; z-index: 1; }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: #fff; border: 1px solid var(--line);
+    padding: 7px 14px; border-radius: 999px; font-size: 13px; font-weight: 700; color: var(--indigo-deep);
+    box-shadow: var(--shadow); margin-bottom: 24px;
+  }
+  .eyebrow .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--mint); box-shadow: 0 0 0 4px rgba(15,157,120,.15); }
+  h1 {
+    font-size: clamp(34px, 6vw, 58px); line-height: 1.12; font-weight: 800;
+    letter-spacing: -0.035em; text-wrap: balance; max-width: 16ch;
+  }
+  h1 .grad {
+    background: linear-gradient(120deg, var(--indigo), var(--violet) 70%);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .lead { margin-top: 22px; font-size: clamp(16px, 2.2vw, 19px); color: var(--ink-soft); max-width: 44ch; }
+  .hero-form { margin-top: 34px; }
+  .trust { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 18px; font-size: 13.5px; color: var(--ink-faint); font-weight: 600; }
+  .trust span { display: inline-flex; align-items: center; gap: 6px; }
+
+  /* ── Email form ── */
+  .emailform { display: flex; gap: 10px; max-width: 480px; flex-wrap: wrap; }
+  .emailform input[type=email] {
+    flex: 1; min-width: 220px; font-size: 16px; padding: 15px 18px;
+    border: 1.5px solid var(--line); border-radius: 14px; background: #fff; color: var(--ink);
+    font-family: inherit; outline: none; transition: border-color .2s, box-shadow .2s;
+  }
+  .emailform input[type=email]:focus { border-color: var(--indigo); box-shadow: 0 0 0 4px rgba(79,70,229,.12); }
+  .emailform input::placeholder { color: var(--ink-faint); }
+  .form-msg { margin-top: 12px; font-size: 14px; font-weight: 600; min-height: 20px; }
+  .form-msg.ok { color: var(--mint); }
+  .form-msg.err { color: var(--rose); }
+  .form-success {
+    display: none; align-items: center; gap: 14px;
+    background: linear-gradient(135deg, rgba(15,157,120,.1), rgba(79,70,229,.08));
+    border: 1.5px solid rgba(15,157,120,.3); border-radius: 16px; padding: 20px 22px; max-width: 480px;
+  }
+  .form-success.show { display: flex; }
+  .form-success .check { width: 40px; height: 40px; border-radius: 50%; background: var(--mint); color: #fff; display: grid; place-items: center; font-size: 20px; flex-shrink: 0; }
+  .form-success b { display: block; font-size: 15px; }
+  .form-success p { font-size: 13.5px; color: var(--ink-soft); }
+
+  /* ── Section base ── */
+  section.block { padding: 84px 0; }
+  .section-head { text-align: center; max-width: 640px; margin: 0 auto 52px; }
+  .kicker { font-size: 13px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--indigo); margin-bottom: 12px; }
+  h2 { font-size: clamp(26px, 4vw, 38px); font-weight: 800; letter-spacing: -0.03em; line-height: 1.2; text-wrap: balance; }
+  .section-head p { margin-top: 14px; font-size: 16.5px; color: var(--ink-soft); }
+
+  /* ── Problem ── */
+  .pain-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; }
+  .pain {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 26px 24px; box-shadow: var(--shadow);
+  }
+  .pain .emoji { font-size: 26px; }
+  .pain h3 { font-size: 17px; font-weight: 700; margin: 14px 0 8px; letter-spacing: -0.02em; }
+  .pain p { font-size: 14.5px; color: var(--ink-soft); }
+  .pain .cost { margin-top: 14px; display: inline-block; font-size: 13px; font-weight: 800; color: var(--rose); background: rgba(225,29,72,.08); padding: 5px 12px; border-radius: 999px; }
+
+  /* ── How (steps) ── */
+  .how { background: var(--ink); color: #fff; border-radius: 32px; padding: 68px 44px; position: relative; overflow: hidden; }
+  .how::before { content:""; position:absolute; inset:0; background: radial-gradient(40rem 24rem at 90% 0%, rgba(124,58,237,.28), transparent 60%), radial-gradient(36rem 24rem at 0% 100%, rgba(79,70,229,.24), transparent 58%); }
+  .how > * { position: relative; z-index: 1; }
+  .how .kicker { color: #a5b4fc; }
+  .how h2 { color: #fff; }
+  .how .section-head p { color: rgba(255,255,255,.62); }
+  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; margin-top: 8px; }
+  .step { }
+  .step .num {
+    width: 44px; height: 44px; border-radius: 13px; display: grid; place-items: center;
+    font-size: 18px; font-weight: 800; margin-bottom: 18px;
+    background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.16);
+    color: #c7d2fe;
+  }
+  .step h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.02em; }
+  .step p { font-size: 14.5px; color: rgba(255,255,255,.65); }
+
+  /* ── Features ── */
+  .feat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; }
+  .feat { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 26px 24px; box-shadow: var(--shadow); }
+  .feat .ic { width: 46px; height: 46px; border-radius: 13px; display: grid; place-items: center; font-size: 22px; background: linear-gradient(135deg, rgba(79,70,229,.1), rgba(124,58,237,.1)); margin-bottom: 16px; }
+  .feat h3 { font-size: 16.5px; font-weight: 700; margin-bottom: 7px; letter-spacing: -0.02em; }
+  .feat p { font-size: 14px; color: var(--ink-soft); }
+
+  /* ── Fact strip ── */
+  .fact { text-align: center; background: linear-gradient(135deg, rgba(79,70,229,.06), rgba(124,58,237,.06)); border: 1px solid var(--line); border-radius: 24px; padding: 48px 32px; }
+  .fact .big { font-size: clamp(28px, 5vw, 44px); font-weight: 800; letter-spacing: -0.03em; }
+  .fact .big .r { color: var(--rose); }
+  .fact p { margin-top: 12px; color: var(--ink-soft); font-size: 16px; }
+
+  /* ── Final CTA ── */
+  .cta { text-align: center; }
+  .cta .emailform { margin: 30px auto 0; justify-content: center; }
+  .cta .form-success { margin: 30px auto 0; }
+
+  /* ── Footer ── */
+  footer { border-top: 1px solid var(--line); padding: 40px 0; margin-top: 20px; }
+  .foot-inner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; color: var(--ink-faint); font-size: 13.5px; }
+  .foot-inner .logo { font-size: 15px; color: var(--ink); }
+  .foot-inner .mark { width: 28px; height: 28px; font-size: 14px; border-radius: 9px; }
+
+  .reveal { opacity: 0; transform: translateY(24px); transition: opacity .7s cubic-bezier(.16,1,.3,1), transform .7s cubic-bezier(.16,1,.3,1); }
+  .reveal.in { opacity: 1; transform: none; }
+
+  @media (max-width: 640px) {
+    .how { padding: 48px 24px; border-radius: 24px; }
+    section.block { padding: 60px 0; }
+    .hero { padding: 48px 0 64px; }
+    .nav-links a.ghost { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity: 1; transform: none; transition: none; }
+    html { scroll-behavior: auto; }
+  }
+</style>
+</head>
+<body>
+
+<nav id="nav">
+  <div class="wrap nav-inner">
+    <a href="#top" class="logo"><span class="mark">🎫</span> 취소 수수료 지킴이</a>
+    <div class="nav-links">
+      <a class="ghost" href="./" target="_blank" rel="noopener">앱 미리보기</a>
+      <a class="btn" href="#waitlist">대기자 신청</a>
+    </div>
+  </div>
+</nav>
+
+<div id="top"></div>
+
+<!-- ── Hero ── -->
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow"><span class="dot"></span> 곧 출시 · 대기자 우선 초대</div>
+    <h1>취소 수수료,<br><span class="grad">오르기 직전에</span><br>알려드릴게요.</h1>
+    <p class="lead">
+      KTX·SRT·버스 예매를 등록해두면, 취소 수수료가 올라가기 전에 알림을 보내드려요.
+      다시는 몰라서 돈을 잃지 마세요.
+    </p>
+
+    <div class="hero-form">
+      <form class="emailform" data-form>
+        <input type="email" name="email" placeholder="이메일 주소를 입력하세요" required autocomplete="email" />
+        <button class="btn lg" type="submit">무료로 먼저 써보기</button>
+      </form>
+      <div class="form-msg" data-msg></div>
+      <div class="form-success" data-success>
+        <div class="check">✓</div>
+        <div>
+          <b>신청 완료! 가장 먼저 초대해드릴게요.</b>
+          <p>출시되면 입력하신 이메일로 알려드립니다.</p>
+        </div>
+      </div>
+      <div class="trust">
+        <span>✅ 설치 없이 웹에서 바로</span>
+        <span>💸 완전 무료</span>
+        <span>🔔 수수료 오르기 전 알림</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ── Problem ── -->
+<section class="block">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="kicker">이런 적 없으세요?</div>
+      <h2>취소 수수료는 시간이 지날수록 올라갑니다</h2>
+      <p>몰라서 타이밍을 놓치면, 아낄 수 있었던 돈을 그대로 잃어요.</p>
+    </div>
+    <div class="pain-grid">
+      <div class="pain reveal">
+        <div class="emoji">😵</div>
+        <h3>출발 3시간 전에 취소</h3>
+        <p>“조금만 일찍 취소할걸.” 무료 구간을 지나 수수료 구간에 들어선 걸 뒤늦게 알았어요.</p>
+        <span class="cost">최대 15% 손해</span>
+      </div>
+      <div class="pain reveal">
+        <div class="emoji">🤯</div>
+        <h3>깜빡하고 안 탄 표</h3>
+        <p>일정이 바뀌었는데 취소를 잊었어요. 출발 후엔 환불이 거의 안 됩니다.</p>
+        <span class="cost">전액에 가까운 손해</span>
+      </div>
+      <div class="pain reveal">
+        <div class="emoji">🧮</div>
+        <h3>규정이 너무 복잡</h3>
+        <p>평일·주말, 교통수단마다 수수료 구간이 제각각. 매번 찾아보기 번거로워요.</p>
+        <span class="cost">계산조차 어려움</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── How it works ── -->
+<section class="block" style="padding-top:0">
+  <div class="wrap">
+    <div class="how reveal">
+      <div class="section-head" style="margin-bottom:44px">
+        <div class="kicker">어떻게 동작하나요</div>
+        <h2>등록만 해두면, 나머지는 지킴이가</h2>
+        <p>딱 한 번 등록하면 알아서 지켜보고, 딱 필요한 순간에 알려드려요.</p>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="num">1</div>
+          <h3>예매 등록</h3>
+          <p>승차권을 캡처해서 올리거나 직접 입력. 교통수단·날짜·시각만 있으면 끝.</p>
+        </div>
+        <div class="step">
+          <div class="num">2</div>
+          <h3>수수료 구간 감시</h3>
+          <p>지킴이가 취소 수수료가 언제 올라가는지 실시간으로 계산해 지켜봐요.</p>
+        </div>
+        <div class="step">
+          <div class="num">3</div>
+          <h3>오르기 전 알림</h3>
+          <p>수수료가 올라가기 직전, 원하는 시점에 알림. 제때 결정할 수 있어요.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Features ── -->
+<section class="block" style="padding-top:0">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="kicker">무엇을 도와드리나요</div>
+      <h2>놓치기 쉬운 것들을 대신 챙겨요</h2>
+    </div>
+    <div class="feat-grid">
+      <div class="feat reveal"><div class="ic">🚆</div><h3>KTX·SRT·버스 모두</h3><p>교통수단별로 다른 수수료 규정을 자동으로 적용해요.</p></div>
+      <div class="feat reveal"><div class="ic">📸</div><h3>캡처로 자동 등록</h3><p>승차권 이미지를 올리면 예매 정보를 알아서 채워드려요.</p></div>
+      <div class="feat reveal"><div class="ic">📊</div><h3>수수료 구간 시각화</h3><p>지금 취소하면 얼마인지, 언제 오르는지 한눈에 보여줘요.</p></div>
+      <div class="feat reveal"><div class="ic">🔔</div><h3>원하는 시점 알림</h3><p>30분 전, 1시간 전, 하루 전… 원하는 간격으로 알림을 받아요.</p></div>
+      <div class="feat reveal"><div class="ic">📝</div><h3>시험 접수도 지원</h3><p>토익 등 시험 취소 수수료 마감도 함께 챙길 수 있어요.</p></div>
+      <div class="feat reveal"><div class="ic">💾</div><h3>내 기기에만 저장</h3><p>예매 정보는 서버가 아닌 내 브라우저에만 안전하게 보관돼요.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Fact ── -->
+<section class="block" style="padding-top:0">
+  <div class="wrap">
+    <div class="fact reveal">
+      <div class="big">출발 3시간 전 취소, <span class="r">최대 15%</span></div>
+      <p>5만 원짜리 표라면 <b>7,500원</b>. 알림 한 번이면 아낄 수 있던 돈이에요.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── Final CTA ── -->
+<section class="block" id="waitlist" style="padding-top:0">
+  <div class="wrap">
+    <div class="cta section-head reveal" style="max-width:680px">
+      <div class="kicker">지금 신청하세요</div>
+      <h2>가장 먼저 써보고, 다시는 놓치지 마세요</h2>
+      <p>출시되면 대기자분들께 가장 먼저 초대장을 보내드려요.</p>
+      <form class="emailform" data-form>
+        <input type="email" name="email" placeholder="이메일 주소를 입력하세요" required autocomplete="email" />
+        <button class="btn lg" type="submit">대기자 신청하기</button>
+      </form>
+      <div class="form-msg" data-msg></div>
+      <div class="form-success" data-success>
+        <div class="check">✓</div>
+        <div>
+          <b>신청 완료! 가장 먼저 초대해드릴게요.</b>
+          <p>출시되면 입력하신 이메일로 알려드립니다.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot-inner">
+    <a href="#top" class="logo"><span class="mark">🎫</span> 취소 수수료 지킴이</a>
+    <div>우아한테크코스 · 가설 검증용 프로토타입</div>
+  </div>
+</footer>
+
+<script>
+  /* ───────────────────────────────────────────────
+     ⚙️  이메일 수신 설정 (1분)
+     1) 아래 FORM_EMAIL 을 본인 이메일로 바꾸세요.
+     2) 페이지에서 한 번 제출하면 Formsubmit 에서
+        본인 메일로 "Activate" 확인 메일이 옵니다. 눌러 활성화.
+     3) 이후부터 신청 이메일이 본인 메일로 도착합니다.
+     (회원가입·백엔드 불필요 · https://formsubmit.co)
+     ─────────────────────────────────────────────── */
+  const FORM_EMAIL = "본인이메일@gmail.com";
+
+  // 유입 경로 추적 (?from=slack 같은 파라미터)
+  const source = new URLSearchParams(location.search).get('from') || 'direct';
+
+  document.querySelectorAll('[data-form]').forEach(form => {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const input = form.querySelector('input[type=email]');
+      const msg = form.parentElement.querySelector('[data-msg]');
+      const success = form.parentElement.querySelector('[data-success]');
+      const btn = form.querySelector('button');
+      const email = input.value.trim();
+      msg.className = 'form-msg';
+      msg.textContent = '';
+
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        msg.className = 'form-msg err';
+        msg.textContent = '올바른 이메일 주소를 입력해 주세요.';
+        return;
+      }
+
+      btn.disabled = true;
+      const original = btn.textContent;
+      btn.textContent = '신청 중…';
+
+      try {
+        const res = await fetch('https://formsubmit.co/ajax/' + FORM_EMAIL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({
+            email,
+            유입경로: source,
+            _subject: '[취소 수수료 지킴이] 새 대기자 신청 🎫',
+            _template: 'table',
+          }),
+        });
+        if (!res.ok) throw new Error('network');
+        form.style.display = 'none';
+        success.classList.add('show');
+        try { localStorage.setItem('waitlisted', '1'); } catch (_) {}
+      } catch (err) {
+        msg.className = 'form-msg err';
+        msg.textContent = '잠시 후 다시 시도해 주세요. (또는 새로고침)';
+        btn.disabled = false;
+        btn.textContent = original;
+      }
+    });
+  });
+
+  // nav 스크롤 테두리
+  const nav = document.getElementById('nav');
+  const onScroll = () => nav.classList.toggle('scrolled', window.scrollY > 8);
+  onScroll();
+  window.addEventListener('scroll', onScroll, { passive: true });
+
+  // 스크롤 등장 애니메이션
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(en => { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+</script>
+</body>
+</html>
