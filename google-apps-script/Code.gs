@@ -16,7 +16,7 @@ const HEADERS = [
 function doPost(e) {
   const data = JSON.parse(e.postData.contents || '{}');
   const lock = LockService.getScriptLock();
-  lock.waitLock(10_000);
+  lock.waitLock(10000);
 
   try {
     const sheet = getOrCreateSheet_();
