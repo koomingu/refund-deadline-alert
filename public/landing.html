@@ -624,14 +624,11 @@
 
 <script>
   /* ───────────────────────────────────────────────
-     ⚙️  이메일 수신 설정 (1분)
-     1) 아래 FORM_EMAIL 을 본인 이메일로 바꾸세요.
-     2) 페이지에서 한 번 제출하면 Formsubmit 에서
-        본인 메일로 "Activate" 확인 메일이 옵니다. 눌러 활성화.
-     3) 이후부터 신청 이메일이 본인 메일로 도착합니다.
-     (회원가입·백엔드 불필요 · https://formsubmit.co)
+     ⚙️  Google Sheets 응답 저장 설정
+     Apps Script 웹 앱 URL입니다. 설문·대기자 신청 응답이
+     연결된 Google Sheets의 '응답' 시트에 한 행씩 저장됩니다.
      ─────────────────────────────────────────────── */
-  const FORM_EMAIL = "minseo12379@gmail.com";
+  const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxSsgphEmyrQrurvHomdD_WLj0GKXcv2KTspN1SU9YefnTY1vtP0VzQIhLgRQYlbJMpSg/exec';
 
   // 유입 경로 추적 (?from=slack 같은 파라미터)
   const source = new URLSearchParams(location.search).get('from') || 'direct';
@@ -659,25 +656,23 @@
       btn.textContent = '신청 중…';
 
       try {
-        const res = await fetch('https://formsubmit.co/ajax/' + FORM_EMAIL, {
+        await fetch(GOOGLE_APPS_SCRIPT_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({
             email,
-            유입경로: source,
-            최근취소경험: cta?.dataset.최근경험 || '(무응답)',
-            취소결과: cta?.dataset.취소결과 || '(무응답)',
-            수수료부담: cta?.dataset.수수료부담 || '(무응답)',
-            수수료인지: cta?.dataset.수수료인지 || '(무응답)',
-            놓친이유: cta?.dataset.놓친이유 || '(무응답)',
-            알림후행동: cta?.dataset.알림후행동 || '(무응답)',
-            다음일정: cta?.dataset.다음일정 || '(무응답)',
-            진단결과: cta?.dataset.진단결과 || '(미진단)',
-            _subject: '[취소 수수료 지킴이] 새 대기자 신청 🎫',
-            _template: 'table',
+            source,
+            recentExperience: cta?.dataset.최근경험 || '(무응답)',
+            cancellationResult: cta?.dataset.취소결과 || '(무응답)',
+            feePaid: cta?.dataset.수수료부담 || '(무응답)',
+            feeKnowledge: cta?.dataset.수수료인지 || '(무응답)',
+            missedReason: cta?.dataset.놓친이유 || '(무응답)',
+            alertAction: cta?.dataset.알림후행동 || '(무응답)',
+            nextSchedule: cta?.dataset.다음일정 || '(무응답)',
+            diagnosis: cta?.dataset.진단결과 || '(미진단)',
           }),
         });
-        if (!res.ok) throw new Error('network');
         form.style.display = 'none';
         success.dataset.email = email;
         success.classList.add('show');
