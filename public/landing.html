@@ -11,6 +11,10 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
 <link rel="stylesheet" as="style" crossorigin
   href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css" />
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
 <style>
   :root {
     --ground: #faf9f7;
@@ -631,6 +635,27 @@
   // 유입 경로 추적 (?from=slack 같은 파라미터)
   const source = new URLSearchParams(location.search).get('from') || 'direct';
 
+  // 전환 퍼널 기록: 개인 식별 정보 없이 Google Sheets의 '이벤트' 시트에 저장합니다.
+  function recordEvent(eventName, data = {}) {
+    fetch(GOOGLE_APPS_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        eventName,
+        source,
+        path: location.pathname,
+        diagnosis: data.diagnosis || '',
+      }),
+    }).catch(() => {});
+  }
+
+  recordEvent('page_view');
+
+  document.querySelector('a[href="#email-signup"]')?.addEventListener('click', () => {
+    recordEvent('waitlist_nav_click');
+  });
+
   document.querySelectorAll('[data-form]').forEach(form => {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -675,6 +700,7 @@
         form.style.display = 'none';
         success.dataset.email = email;
         success.classList.add('show');
+        recordEvent('waitlist_signup', { diagnosis: cta?.dataset.진단결과 || '' });
         try { localStorage.setItem('waitlisted', '1'); } catch (_) {}
       } catch (err) {
         msg.className = 'form-msg err';
@@ -712,10 +738,15 @@
 
   document.querySelectorAll('[data-survey]').forEach(survey => {
     const answers = {};
+    let hasStartedSurvey = false;
     survey.querySelectorAll('.opts').forEach(group => {
       const key = group.dataset.q;
       group.querySelectorAll('button').forEach(btn => {
         btn.addEventListener('click', () => {
+          if (!hasStartedSurvey) {
+            recordEvent('survey_started');
+            hasStartedSurvey = true;
+          }
           group.querySelectorAll('button').forEach(b => b.classList.remove('sel'));
           btn.classList.add('sel');
           answers[key] = btn.dataset.v;
@@ -747,6 +778,7 @@
       cta.dataset.알림후행동 = answers['알림후행동'] || '(무응답)';
       cta.dataset.다음일정 = answers['다음일정'] || '(무응답)';
       cta.dataset.진단결과 = r.type;
+      recordEvent('survey_completed', { diagnosis: r.type });
       requestAnimationFrame(() => resultBox.scrollIntoView({ behavior: 'smooth', block: 'center' }));
       return true;
     };

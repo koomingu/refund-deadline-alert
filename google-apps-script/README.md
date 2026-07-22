@@ -9,6 +9,23 @@
 
 `응답` 시트가 자동으로 만들어지며, 한 행에 이메일·유입 경로·설문 응답·진단 결과가 저장됩니다.
 
+## 전환 퍼널 보기
+
+랜딩 페이지를 방문하거나 행동하면 `이벤트` 시트가 자동으로 만들어집니다. 개인 식별 정보 없이 아래 이벤트가 한 행씩 저장됩니다.
+
+- `page_view`: 랜딩 페이지 방문
+- `waitlist_nav_click`: 상단 대기자 신청 버튼 클릭
+- `survey_started`: 설문 첫 문항 응답
+- `survey_completed`: 설문 결과 확인
+- `waitlist_signup`: 이메일 대기자 신청 완료
+
+예를 들어 별도 시트에서 아래 수식으로 전환율을 확인할 수 있습니다.
+
+```text
+설문 완료율: =COUNTIF(이벤트!B:B,"survey_completed")/COUNTIF(이벤트!B:B,"survey_started")
+신청 전환율: =COUNTIF(이벤트!B:B,"waitlist_signup")/COUNTIF(이벤트!B:B,"page_view")
+```
+
 ## 설문 항목을 추가했을 때
 
 `Code.gs`를 최신 내용으로 교체한 뒤, **배포 → 배포 관리 → 수정 → 새 버전**을 선택해 다시 배포하세요. 기존 웹 앱 URL은 그대로 사용할 수 있습니다.

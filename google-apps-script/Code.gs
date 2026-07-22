@@ -1,4 +1,5 @@
 const SHEET_NAME = '응답';
+const EVENT_SHEET_NAME = '이벤트';
 const HEADERS = [
   '제출 시각',
   '이메일',
@@ -13,9 +14,16 @@ const HEADERS = [
   '진단 결과',
   '사례 설명',
 ];
+const EVENT_HEADERS = ['발생 시각', '이벤트', '유입 경로', '페이지 경로', '진단 결과'];
 
 function doPost(e) {
   const data = JSON.parse(e.postData.contents || '{}');
+
+  if (data.eventName) {
+    appendEvent_(data);
+    return json_({ ok: true });
+  }
+
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
 
@@ -36,6 +44,28 @@ function doPost(e) {
       data.caseDetail || '',
     ]);
     return json_({ ok: true });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function appendEvent_(data) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+
+  try {
+    const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = spreadsheet.getSheetByName(EVENT_SHEET_NAME) || spreadsheet.insertSheet(EVENT_SHEET_NAME);
+    sheet.getRange(1, 1, 1, EVENT_HEADERS.length).setValues([EVENT_HEADERS]);
+    sheet.getRange(1, 1, 1, EVENT_HEADERS.length).setFontWeight('bold');
+    sheet.setFrozenRows(1);
+    sheet.appendRow([
+      new Date(),
+      data.eventName || '',
+      data.source || 'direct',
+      data.path || '/',
+      data.diagnosis || '',
+    ]);
   } finally {
     lock.releaseLock();
   }
