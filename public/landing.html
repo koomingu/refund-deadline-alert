@@ -635,6 +635,21 @@
   // 유입 경로 추적 (?from=slack 같은 파라미터)
   const source = new URLSearchParams(location.search).get('from') || 'direct';
 
+  // 설문 완료와 이후 대기자 신청을 같은 응답으로 연결합니다.
+  // 브라우저 탭을 새로고침해도 같은 세션에서는 유지됩니다.
+  function getResponseId() {
+    try {
+      const saved = sessionStorage.getItem('surveyResponseId');
+      if (saved) return saved;
+      const id = crypto.randomUUID();
+      sessionStorage.setItem('surveyResponseId', id);
+      return id;
+    } catch (_) {
+      return String(Date.now()) + '-' + Math.random().toString(36).slice(2);
+    }
+  }
+  const responseId = getResponseId();
+
   // 전환 퍼널 기록: 개인 식별 정보 없이 Google Sheets의 '이벤트' 시트에 저장합니다.
   function recordEvent(eventName, data = {}) {
     fetch(GOOGLE_APPS_SCRIPT_URL, {
@@ -695,6 +710,7 @@
             nextSchedule: cta?.dataset.다음일정 || '(무응답)',
             caseDetail: cta?.querySelector('[data-case-detail]')?.value.trim() || '',
             diagnosis: cta?.dataset.진단결과 || '(미진단)',
+            responseId,
           }),
         });
         form.style.display = 'none';
@@ -778,6 +794,26 @@
       cta.dataset.알림후행동 = answers['알림후행동'] || '(무응답)';
       cta.dataset.다음일정 = answers['다음일정'] || '(무응답)';
       cta.dataset.진단결과 = r.type;
+      // 이메일을 남기지 않아도 설문 답변은 즉시 저장합니다.
+      // 이후 대기자 등록 시 Apps Script가 같은 응답 ID의 행을 갱신합니다.
+      fetch(GOOGLE_APPS_SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          source,
+          responseId,
+          recentExperience: cta.dataset.최근경험,
+          cancellationResult: cta.dataset.취소결과,
+          feePaid: cta.dataset.수수료부담,
+          feeKnowledge: cta.dataset.수수료인지,
+          missedReason: cta.dataset.놓친이유,
+          alertAction: cta.dataset.알림후행동,
+          nextSchedule: cta.dataset.다음일정,
+          caseDetail: cta.querySelector('[data-case-detail]')?.value.trim() || '',
+          diagnosis: r.type,
+        }),
+      }).catch(() => {});
       recordEvent('survey_completed', { diagnosis: r.type });
       requestAnimationFrame(() => resultBox.scrollIntoView({ behavior: 'smooth', block: 'center' }));
       return true;

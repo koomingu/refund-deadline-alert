@@ -13,6 +13,8 @@ const HEADERS = [
   '다음 일정',
   '진단 결과',
   '사례 설명',
+  '응답 ID',
+  '상태',
 ];
 const EVENT_HEADERS = ['발생 시각', '이벤트', '유입 경로', '페이지 경로', '진단 결과'];
 
@@ -29,9 +31,15 @@ function doPost(e) {
 
   try {
     const sheet = getOrCreateSheet_();
-    sheet.appendRow([
+    const responseId = data.responseId || '';
+    const existingRow = responseId ? findResponseRow_(sheet, responseId) : 0;
+    const existing = existingRow
+      ? sheet.getRange(existingRow, 1, 1, HEADERS.length).getValues()[0]
+      : [];
+    const email = data.email || existing[1] || '';
+    const row = [
       new Date(),
-      data.email || '',
+      email,
       data.source || 'direct',
       data.recentExperience || '',
       data.cancellationResult || '',
@@ -42,7 +50,15 @@ function doPost(e) {
       data.nextSchedule || '',
       data.diagnosis || '',
       data.caseDetail || '',
-    ]);
+      responseId,
+      email ? '대기자 등록' : '설문 완료',
+    ];
+
+    if (existingRow) {
+      sheet.getRange(existingRow, 1, 1, HEADERS.length).setValues([row]);
+    } else {
+      sheet.appendRow(row);
+    }
     return json_({ ok: true });
   } finally {
     lock.releaseLock();
@@ -79,6 +95,16 @@ function getOrCreateSheet_() {
   sheet.getRange(1, 1, 1, HEADERS.length).setFontWeight('bold');
   sheet.setFrozenRows(1);
   return sheet;
+}
+
+function findResponseRow_(sheet, responseId) {
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return 0;
+
+  const responseIdColumn = HEADERS.indexOf('응답 ID') + 1;
+  const ids = sheet.getRange(2, responseIdColumn, lastRow - 1, 1).getValues();
+  const index = ids.findIndex(row => row[0] === responseId);
+  return index === -1 ? 0 : index + 2;
 }
 
 function json_(body) {
