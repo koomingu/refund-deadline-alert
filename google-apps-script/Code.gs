@@ -11,6 +11,7 @@ const HEADERS = [
   '알림 후 행동',
   '다음 일정',
   '진단 결과',
+  '사례 설명',
 ];
 
 function doPost(e) {
@@ -32,6 +33,7 @@ function doPost(e) {
       data.alertAction || '',
       data.nextSchedule || '',
       data.diagnosis || '',
+      data.caseDetail || '',
     ]);
     return json_({ ok: true });
   } finally {
@@ -43,11 +45,9 @@ function getOrCreateSheet_() {
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = spreadsheet.getSheetByName(SHEET_NAME) || spreadsheet.insertSheet(SHEET_NAME);
 
-  if (sheet.getLastRow() === 0) {
-    sheet.appendRow(HEADERS);
-    sheet.getRange(1, 1, 1, HEADERS.length).setFontWeight('bold');
-    sheet.setFrozenRows(1);
-  }
+  sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
+  sheet.getRange(1, 1, 1, HEADERS.length).setFontWeight('bold');
+  sheet.setFrozenRows(1);
   return sheet;
 }
 
